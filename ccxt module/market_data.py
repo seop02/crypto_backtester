@@ -54,7 +54,7 @@ def market_data(scale, duration, symbol):
 
     symbol = "BTC/USDT"
     now = datetime.now()
-    time_delta = timedelta(seconds=30)
+    time_delta = timedelta(seconds=scale)
     end = now+duration*time_delta
     t = now
     result = []
@@ -62,7 +62,6 @@ def market_data(scale, duration, symbol):
         btc = binance.fetch_ticker(symbol)
         result.append(btc)
         t += time_delta
-        time.sleep(time_delta)
-   
-    df = pd.DataFrame(data=result)
-    df.to_csv('raw.csv')
+        df = pd.DataFrame(data=result)
+        df.to_csv(f'raw_{scale}_{duration}.csv')
+        time.sleep(10)

@@ -3,11 +3,11 @@ import pandas as pd
 from datetime import datetime
 
 if __name__ == '__main__':
-    scale = 'second'
+    scale = 20
     duration = 1000
     current_datetime = datetime.now()
     symbol = 'BTC/USDT'
     
-    #market_data(scale, duration, symbol)
+    market_data(scale, duration, symbol)
     
     #print(df['last'])
