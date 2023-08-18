@@ -1,6 +1,11 @@
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
+import logging
+
+logging.basicConfig(level=logging.WARNING)
+logging.getLogger().setLevel(logging.INFO)
+LOG = logging.getLogger(__name__)
 
 def preprocessing():
     df = pd.read_csv('raw.csv', index_col=0)
@@ -29,13 +34,15 @@ def preprocessing():
             else:
                 index.append(idx)
   
-    print(index)
+    
     
     X = x_raw.values
     X = X[:-1]
     X = np.delete(X, index, axis=0)
-    pca = PCA(0.99)
+    LOG.info(X.shape)
+    pca = PCA(n_components='mle', svd_solver='full')
     pca.fit(X)
     X = pca.transform(X)
+    LOG.info(X.shape)
     
     return X, y
