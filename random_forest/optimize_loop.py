@@ -16,7 +16,7 @@ def  optimize_loop(parameters, evaluation_function):
         parameters=parameters,
         evaluation_function=evaluation_function,
         objective_name='balanced_accuracy',
-        total_trials=15  # Number of optimization iterations
+        total_trials=30  # Number of optimization iterations
         )
     #storing the optimal results and hyperparameters
     means, covariances = best_values
