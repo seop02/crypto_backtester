@@ -15,15 +15,15 @@ def  optimize_loop(parameters, evaluation_function):
     best_parameters, best_values, experiemt, model = optimize(
         parameters=parameters,
         evaluation_function=evaluation_function,
-        objective_name='balanced_accuracy',
-        total_trials=30  # Number of optimization iterations
+        objective_name='accuracy',
+        total_trials=25  # Number of optimization iterations
         )
     #storing the optimal results and hyperparameters
     means, covariances = best_values
     return best_parameters, means
 
 def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_test):
-    balanced_accuracy = np.zeros((len(classifiers)))    
+    accuracy = np.zeros((len(classifiers)))    
     tn_list = np.zeros((len(classifiers)))
     fp_list = np.zeros((len(classifiers)))
     fn_list = np.zeros((len(classifiers)))
@@ -37,7 +37,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.LogisticR(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.LogisticR(X_train, X_test, y_train, y_test, 'final', best_parameters)
             
@@ -46,7 +46,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.LogisticR(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.LogisticR(X_train, X_test, y_train, y_test, 'final', best_parameters)
 
@@ -55,7 +55,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.LogisticR(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.LogisticR(X_train, X_test, y_train, y_test, 'final', best_parameters)
             
@@ -64,7 +64,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.LogisticR(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.LogisticR(X_train, X_test, y_train, y_test, 'final', best_parameters)
 
@@ -73,7 +73,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.LogisticR(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.LogisticR(X_train, X_test, y_train, y_test, 'final', best_parameters)
             
@@ -82,7 +82,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.LogisticR(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.LogisticR(X_train, X_test, y_train, y_test, 'final', best_parameters)
     
@@ -93,7 +93,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.LDA(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.LDA(X_train, X_test, y_train, y_test, 'final', best_parameters)
             
@@ -102,7 +102,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.QDA(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.QDA(X_train, X_test, y_train, y_test, 'final', best_parameters)
 
@@ -111,7 +111,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.BNB(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.BNB(X_train, X_test, y_train, y_test, 'final', best_parameters)
                 
@@ -120,7 +120,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.SVM(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.SVM(X_train, X_test, y_train, y_test, 'final', best_parameters)
 
@@ -129,7 +129,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.ADA(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.ADA(X_train, X_test, y_train, y_test, 'final', best_parameters)
 
@@ -138,7 +138,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.RF(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.RF(X_train, X_test, y_train, y_test, 'final', best_parameters)
 
@@ -147,7 +147,7 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.KNN(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.KNN(X_train, X_test, y_train, y_test, 'final', best_parameters)
 
@@ -156,13 +156,13 @@ def  optimize_parameters(parameters, classifiers, X_train, X_test, y_train, y_te
                 best_parameters, means = optimize_loop(parameters=parameters[classifiers[i]], 
                                                        evaluation_function=
                                                        train_model.DT(X_train, X_test, y_train, y_test, 'optimize', parameters[classifiers[i]]))
-                balanced_accuracy[i] = means['balanced_accuracy']
+                accuracy[i] = means['accuracy']
                 best_hyperparameters[f'{classifiers[i]}'] = best_parameters
                 score, tn_list[i], fp_list[i], fn_list[i], tp_list[i] = train_model.DT(X_train, X_test, y_train, y_test, 'final', best_parameters)
 
             else: 
                 print("error!")
 
-            d = {'clssifiers': classifiers, 'BA': balanced_accuracy, 'TN': tn_list, 'FP': fp_list, 'FN': fn_list, 'TP': tp_list}
+            d = {'clssifiers': classifiers, 'BA': accuracy, 'TN': tn_list, 'FP': fp_list, 'FN': fn_list, 'TP': tp_list}
             df = pd.DataFrame(data=d)
     return df

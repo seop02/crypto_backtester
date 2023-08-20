@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from sklearn.decomposition import PCA
@@ -83,24 +83,29 @@ if __name__ == '__main__':
     {"name": "max_depth", "type": "range", "bounds": [1, 10]},
     {"name": "min_samples_split", "type": "range", "bounds": [2, 10]}
     ]}
-    scale = 20
-    duration = 1000
-    X, y = preprocessing(scale, duration)
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=238194)
-    # clf = RandomForestClassifier()
-    # clf.fit(X_train, y_train)
-    # y_pred = clf.predict(X_test)
-    # accuracy = balanced_accuracy_score(y_pred, y_test)
-    # print(accuracy)
+    cutoff_space = np.linspace(0.0001, 0.001, 10)
+    scale_space = [20,30]
+    for scale in scale_space:
+        for cutoff in cutoff_space:
+            duration = 8640
+            LOG.info(f"Current sclae is {scale}, current cutoff is {cutoff}")
+            X, y = preprocessing(scale, duration, cutoff)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+            clf = RandomForestClassifier()
+            clf.fit(X_train, y_train)
+            y_pred = clf.predict(X_test)
+            accuracy = accuracy_score(y_pred, y_test)
+            print(accuracy)
 
-    # classifiers = [
-    #     "LogisticR_lbfgs", "LogisticR_liblinear", "LogisticR_newtonc",  "LogisticR_newtonch","DecisionTree", 
-    #     "NearestC", "LDA_le", "QDA", "BernoulliNB", "GaussianNB",  "AdaBoost", "RandomForest", "KNN"
-    #                ]
-    # df = optimize_parameters(
-    #     parameters, classifiers, X_train, X_test, y_train, y_test
-    #     )
-    # df.to_csv(f"optimized_{scale}_{duration}.csv")
+            classifiers = [
+                "LogisticR_lbfgs", "LogisticR_liblinear", "LogisticR_newtonc",  "LogisticR_newtonch","DecisionTree", 
+                "NearestC", "LDA_le", "QDA", "BernoulliNB", "GaussianNB",  "AdaBoost", "RandomForest", "KNN"
+                        ]
+            df = optimize_parameters(
+                parameters, classifiers, X_train, X_test, y_train, y_test
+                )
+
+            df.to_csv(f"optimized_{scale}_{duration}_{scale/10}_{cutoff:.4f}.csv")
     
 
     
