@@ -83,29 +83,35 @@ if __name__ == '__main__':
     {"name": "max_depth", "type": "range", "bounds": [1, 10]},
     {"name": "min_samples_split", "type": "range", "bounds": [2, 10]}
     ]}
-    cutoff_space = np.linspace(0.0001, 0.001, 10)
-    scale_space = [20,30]
+    cutoff_space = [0.0003]#np.linspace(0.0001, 0.001, 10)
+    scale_space = [60]
     for scale in scale_space:
         for cutoff in cutoff_space:
             duration = 8640
             LOG.info(f"Current sclae is {scale}, current cutoff is {cutoff}")
             X, y = preprocessing(scale, duration, cutoff)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-            clf = RandomForestClassifier()
-            clf.fit(X_train, y_train)
-            y_pred = clf.predict(X_test)
-            accuracy = accuracy_score(y_pred, y_test)
-            print(accuracy)
+            data = pd.DataFrame({'actual': y_test})
+            data.to_csv('actual.csv')
 
-            classifiers = [
-                "LogisticR_lbfgs", "LogisticR_liblinear", "LogisticR_newtonc",  "LogisticR_newtonch","DecisionTree", 
-                "NearestC", "LDA_le", "QDA", "BernoulliNB", "GaussianNB",  "AdaBoost", "RandomForest", "KNN"
-                        ]
-            df = optimize_parameters(
-                parameters, classifiers, X_train, X_test, y_train, y_test
-                )
+            LOG.info(len(y_train))
+            LOG.info(len(y_test))
+            # clf = RandomForestClassifier()
+            # clf.fit(X_train, y_train)
+            # y_pred = clf.predict(X_test)
+            # accuracy = accuracy_score(y_pred, y_test)
+            # print(accuracy)
+            # data = pd.DataFrame(y_pred)
+            # data.to_csv('trial_data.csv')
 
-            df.to_csv(f"optimized_{scale}_{duration}_{scale/10}_{cutoff:.4f}.csv")
+            # classifiers = [
+            #     "DecisionTree", "RandomForest", "KNN"
+            #             ]
+            # df = optimize_parameters(
+            #     parameters, classifiers, X_train, X_test, y_train, y_test
+            #     )
+
+            # df.to_csv(f"optimized_{scale}_{duration}_final_{cutoff:.4f}.csv")
     
 
     

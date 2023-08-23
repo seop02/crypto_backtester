@@ -28,7 +28,7 @@ def preprocessing(scale, duration, cutoff):
         if idx < len(y_raw)-1:
             change = (y_raw[idx+1]-price)/price
             if change > cutoff:
-                label = 1
+                label = 2
                 y.append(label)
 
             elif change < -cutoff:
@@ -36,12 +36,55 @@ def preprocessing(scale, duration, cutoff):
                 y.append(label)
             
             else:
-                index.append(idx)
+                label = 1
+                y.append(label)
   
     LOG.info(len(y))
     X = x_raw.values
     X = X[:-1]
-    X = np.delete(X, index, axis=0)
+    LOG.info(X.shape)
+    pca = PCA(n_components='mle', svd_solver='full')
+    pca.fit(X)
+    X = pca.transform(X)
+    LOG.info(X.shape)
+    
+    return X, y
+
+def preprocessing2(scale, duration, cutoff):
+    df = pd.read_csv(f'raw_10_{duration}.csv', index_col=0)
+    excluding_columns = [
+        'last', 'symbol', 'timestamp', 'datetime', 'bid', 
+        'bidVolume', 'ask', 'askVolume', 'info', 'previousClose'
+        ]
+    
+    step = int(scale/10)
+    columns = [col for col in df.columns if col not in excluding_columns]
+    x_raw = df.loc[0::step, columns]
+    
+    y_raw = df.loc[0::step, 'last'].values
+
+    LOG.info(len(y_raw))
+
+    y = []
+    index = []
+    for idx, price in enumerate(y_raw):
+        if idx < len(y_raw)-1:
+            change = (y_raw[idx+1]-price)/price
+            if change > cutoff:
+                label = 1
+                y.append(label)
+
+            elif change < -cutoff:
+                label = 1
+                y.append(label)
+            
+            else:
+                label = 0
+                y.append(label)
+  
+    LOG.info(len(y))
+    X = x_raw.values
+    X = X[:-1]
     LOG.info(X.shape)
     pca = PCA(n_components='mle', svd_solver='full')
     pca.fit(X)
