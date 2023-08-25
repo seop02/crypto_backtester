@@ -1,37 +1,6 @@
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.svm import SVC
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn import tree
-
-from sklearn.model_selection import cross_val_score
-
-
+from sklearn.metrics import balanced_accuracy_score, confusion_matrix
 import numpy as np
-
-def loadDataFVC(fpID, X, y):
-    X_flat = [x.flatten() for x in X]
-    x_train, x_test, y_train, y_test = train_test_split(X_flat, y, \
-                                                        test_size=0.3, random_state=500, stratify=y)
-    y_train_binary = np.array([0] * len(y_train))  # Set all labels to 0
-    y_test_binary = np.array([0] * len(y_test))
-
-    for i in range(len(y_train)):  # If fp id is our chosen value, set label to 1
-        if (int(y_train[i]) == fpID):
-            y_train_binary[i] = 1
-
-    for i in range(len(y_test)):
-        if (int(y_test[i]) == fpID):
-            y_test_binary[i] = 1
-
-    return x_train, y_train_binary, x_test, y_test_binary
 
 def RF(X_train, X_test, y_train, y_test, mode, hyperparameters):
     def train_RF(hyperparameters):
@@ -45,10 +14,11 @@ def RF(X_train, X_test, y_train, y_test, mode, hyperparameters):
             model.fit(X_train, y_train)
             
             # Evaluate the model's performance
-            y_pred = model.predict(X_test)
-            score = accuracy_score(y_test, y_pred)
+            predictions = model.predict(X_test)
+            score = balanced_accuracy_score(y_test, predictions)
+            tn, fp, fn, tp = confusion_matrix(y_test, predictions).ravel()
 
-            return score, y_pred
+            return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_RF
     
@@ -65,12 +35,12 @@ def LogisticR(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
 
         # Evaluate the model's performance
         
-        return score, y_pred
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return logisticR
         
@@ -89,11 +59,12 @@ def LDA(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
 
         # Evaluate the model's performance
         
-        return score, y_pred
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_LDA
         
@@ -110,10 +81,10 @@ def QDA(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        confusion_matrix(y_test, y_pred).ravel()
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
 
-        return score, y_pred
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_QDA
         
@@ -131,9 +102,9 @@ def BNB(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score, y_pred
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_BernoulliNB
         
@@ -151,9 +122,9 @@ def SVM(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score, y_pred
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_SVM
         
@@ -168,9 +139,9 @@ def ADA(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
 
     if mode == 'optimize':
         return train_ada
@@ -186,9 +157,9 @@ def KNN(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score, y_pred
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_KNN
         
@@ -204,11 +175,12 @@ def DT(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score, y_pred
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_DT
         
     elif mode == 'final':
         return train_DT(hyperparameters)
+

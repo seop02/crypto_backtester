@@ -1,22 +1,6 @@
-import numpy as np
-import pandas as pd
-from preprocessing import preprocessing
-from optimize_loop import optimize_parameters
-import logging
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-from sklearn.svm import OneClassSVM
+import os
 
-logging.basicConfig(level=logging.WARNING)
-logging.getLogger().setLevel(logging.INFO)
-LOG = logging.getLogger(__name__)
-
-
-
-if __name__ == '__main__':
-
-    parameters = {
+parameters = {
     "LogisticR_lbfgs": [
     {"name": "C", "type": "range", "bounds": [0.1, 10.0]},
     {"name": "solver", "type": "choice", "values": ["lbfgs"]},
@@ -82,37 +66,3 @@ if __name__ == '__main__':
     {"name": "max_depth", "type": "range", "bounds": [1, 10]},
     {"name": "min_samples_split", "type": "range", "bounds": [2, 10]}
     ]}
-
-    #one class verification
-
-    cutoff_space = np.linspace(0.0001, 0.001, 10)
-    scale_space = [20, 40, 60]
-    for scale in scale_space:
-        for cutoff in cutoff_space:
-            duration = 8640
-            LOG.info(f"Current sclae is {scale}, current cutoff is {cutoff}")
-            X, y = preprocessing(scale, duration, cutoff)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-            # data = pd.DataFrame({'actual': y_test})
-            # data.to_csv('actual.csv')
-
-            # LOG.info(len(y_train))
-            # LOG.info(len(y_test))
-
-            # classifiers = [
-            #     "DecisionTree", "RandomForest", "KNN"
-            #             ]
-            # df = optimize_parameters(
-            #     parameters, classifiers, X_train, X_test, y_train, y_test
-            #     )
-
-            # df.to_csv(f"consecutive_binary/consec_data/consec_{scale}_{cutoff}.csv")
-
-            clf = RandomForestClassifier()
-            clf.fit(X_train, y_train)
-            y_pred = clf.predict(X_test)
-            accuracy = accuracy_score(y_pred, y_test)
-            LOG.info(accuracy)
-            data = pd.DataFrame(y_pred)
-            data.to_csv(f'trial_data_{scale}_{cutoff:.4f}.csv')
-

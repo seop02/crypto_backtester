@@ -69,9 +69,9 @@ if __name__ == '__main__':
                     else:
                         d["outlier"] += 1
 
-            normalize = sum(d.values())
+       
 
-            difficulty = {key: value / normalize for key, value in d.items()}
+            difficulty = d
 
 
             with open(path, "w") as json_file:

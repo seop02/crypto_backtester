@@ -1,5 +1,5 @@
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import balanced_accuracy_score, confusion_matrix
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -45,10 +45,11 @@ def RF(X_train, X_test, y_train, y_test, mode, hyperparameters):
             model.fit(X_train, y_train)
             
             # Evaluate the model's performance
-            y_pred = model.predict(X_test)
-            score = accuracy_score(y_test, y_pred)
+            predictions = model.predict(X_test)
+            score = balanced_accuracy_score(y_test, predictions)
+            tn, fp, fn, tp = confusion_matrix(y_test, predictions).ravel()
 
-            return score, y_pred
+            return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_RF
     
@@ -65,12 +66,12 @@ def LogisticR(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
 
         # Evaluate the model's performance
         
-        return score, y_pred
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return logisticR
         
@@ -89,11 +90,12 @@ def LDA(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
 
         # Evaluate the model's performance
         
-        return score, y_pred
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_LDA
         
@@ -110,10 +112,10 @@ def QDA(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        confusion_matrix(y_test, y_pred).ravel()
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
 
-        return score, y_pred
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_QDA
         
@@ -131,9 +133,9 @@ def BNB(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score, y_pred
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_BernoulliNB
         
@@ -151,9 +153,9 @@ def SVM(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score, y_pred
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_SVM
         
@@ -168,9 +170,9 @@ def ADA(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
 
     if mode == 'optimize':
         return train_ada
@@ -186,9 +188,9 @@ def KNN(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score, y_pred
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_KNN
         
@@ -204,9 +206,9 @@ def DT(X_train, X_test, y_train, y_test, mode, hyperparameters):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        score = accuracy_score(y_test, y_pred)
-        
-        return score, y_pred
+        score = balanced_accuracy_score(y_test, y_pred)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        return score, tn, fp, fn, tp
     if mode == 'optimize':
         return train_DT
         
