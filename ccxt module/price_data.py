@@ -19,7 +19,7 @@ if __name__ == '__main__':
     now = datetime.datetime.now()
     date = now.strftime("%Y-%m-%d")
     i = 0
-    currency = 'BTC/USDT'
+    currency = 'XRP/USDT'
     duration = 86400
     while i < duration:
         ask, bid = current_prices(currency)

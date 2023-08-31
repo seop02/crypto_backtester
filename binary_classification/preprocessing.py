@@ -92,3 +92,34 @@ def preprocessing2(scale, duration, cutoff):
     LOG.info(X.shape)
     
     return X, y
+
+def volume_diff(data, cutoff):
+    X_raw = data
+    X_raw = np.array(X_raw)
+    length = X_raw.shape[0]
+    X = np.delete(X_raw, [0,2], axis = 1)
+    LOG.info(X[0])
+    
+    asks = X[:,0]
+    bids = X[:,1]
+
+    signal = asks - bids
+
+    price = []
+    diff = []
+    for idx in range(length):
+        mid = (X_raw[idx][0][0] + X_raw[idx][2][0])/2
+        price.append(mid)
+
+    for idx in range(length-1):
+        change = (price[idx+1]-price[idx])/price[idx]
+        if change > cutoff:
+            label = 1
+            diff.append(label)
+
+        elif change < -cutoff:
+            label = 0
+            diff.append(label)
+
+    
+    return signal, diff
