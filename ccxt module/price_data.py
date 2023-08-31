@@ -23,21 +23,20 @@ if __name__ == '__main__':
     duration = 86400
     while i < duration:
         ask, bid = current_prices(currency)
-        now_ask = np.array(ask)
-        now_bid = np.array(bid)
+        now_ask = np.array(np.transpose(ask))
+        now_bid = np.array(np.transpose(bid))
 
         orderbook_ask.append(now_ask)
         orderbook_bid.append(now_bid)
-        time.sleep(1)
         i += 1
         LOG.info(f'{i}')
 
         asks = np.array(orderbook_ask)
         bids = np.array(orderbook_bid)
 
-        final = np.concatenate((asks, bids), axis=0)
+        final = np.concatenate((asks, bids), axis=1)
         LOG.info(final.shape)
         np.savetxt(f"{date}_orderbook1.csv", final.reshape(-1, 200*i))
-        np.save(f'{date}_orderbook1.npy', final)
+        np.save(f'{date}_orderbook.npy', final)
 
 
