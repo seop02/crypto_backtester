@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
-from preprocessing import preprocessing, volume_diff_one_class
+from preprocessing import volume_diff_ternary, volume_diff_one_class
 import logging
 from sklearn.model_selection import train_test_split
 from optimize_loop import optimize_parameters
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.datasets import load_wine
@@ -117,19 +117,34 @@ if __name__ == '__main__':
     #             )
 
     #         df.to_csv(f"optimized_{scale}_{duration}_final_{cutoff:.4f}.csv")
-    data = np.load('orderbook_data_2.npy')
+    data = np.load('xrp_2023-09-01_orderbook.npy')
     cutoff = 0.0001
-    X, y = volume_diff_one_class(data, cutoff)
-    X = X[:, :50]
+    X, y = volume_diff_ternary(data, cutoff)
+    X = X[:, :10]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False, random_state=None)
-    classifiers = [
-                "DecisionTree", "RandomForest", "KNN"]
-    df = optimize_parameters(
-        parameters, classifiers, X_train, X_test, y_train, y_test
-        )
+    # classifiers = [
+    #             "DecisionTree", "RandomForest", "KNN"]
+    # df = optimize_parameters(
+    #     parameters, classifiers, X_train, X_test, y_train, y_test
+    #     )
 
-    df.to_csv(f"volume_{cutoff:.4f}_oneclass.csv")
+    # df.to_csv(f"volume_{cutoff:.4f}_oneclass.csv")
+    model = DecisionTreeClassifier()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    LOG.info(f'y_test: {y_test}')
+    LOG.info(f'num of 2: {np.count_nonzero(y_test==2)}')
+    LOG.info(f'num of 1: {np.count_nonzero(y_test==1)}')
+    LOG.info(f'num of 0: {np.count_nonzero(y_test==0)}')
+    LOG.info(f'y_pred: {y_pred}')
+    LOG.info(f'num of 2: {np.count_nonzero(y_pred==2)}')
+    LOG.info(f'num of 1: {np.count_nonzero(y_pred==1)}')
+    LOG.info(f'num of 0: {np.count_nonzero(y_pred==0)}')
+    LOG.info(f'accuracy: {accuracy}')
 
 
 

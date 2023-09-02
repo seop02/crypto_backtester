@@ -1,5 +1,8 @@
 import os
 
+api_path = f"{os.path.dirname(__file__)}"
+
+
 parameters = {
     "LogisticR_lbfgs": [
     {"name": "C", "type": "range", "bounds": [0.1, 10.0]},
