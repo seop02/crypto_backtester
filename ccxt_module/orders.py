@@ -25,6 +25,25 @@ def insert_order(currency, amount, price):
     pprint.pprint(order)
     return order
 
+def sell_order(currency, amount, price):
+    with open("ccxt_module/api.txt") as f:
+        lines = f.readlines()
+        api_key = lines[0].strip() 
+        secret = lines[1].strip() 
+
+    binance = ccxt.binance(config={
+        'apiKey': api_key,
+        'secret': secret
+    })
+
+    order = binance.create_limit_sell_order(
+        symbol=currency, 
+        amount=amount, 
+        price=price
+    )
+    pprint.pprint(order)
+    return order
+
 def current_balance():
     with open("ccxt_module/api.txt") as f:
         lines = f.readlines()
@@ -32,14 +51,12 @@ def current_balance():
         api_secret = lines[1].strip() 
     exchange = ccxt.binance(config={
     'apiKey': api_key,
-    'secret': api_secret,
-    'enableRateLimit': True
+    'secret': api_secret
     }
     )
 
     # balance
     balance = exchange.fetch_balance()
-    pprint.pprint(balance)
     return balance
 
 def cancel_order(currency, order_id):
