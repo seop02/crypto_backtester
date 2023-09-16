@@ -14,17 +14,17 @@ def plotapi(title, upbitcu):
     upb = pd.read_csv(f'apidata_{title}_{upbitcu}_upbit.csv')
 
     price_binance = bin['last'].values * upb['last'].values[0]/bin['last'].values[0]
-    time_binance = bin['timestamp'].values - bin['timestamp'].values[0]
+    time_binance = bin['timestamp'].values/1000 - bin['timestamp'].values[0]/1000
 
     price_upbit = upb['last'].values
-    time_upbit = upb['timestamp'].values -bin['timestamp'].values[0]
+    time_upbit = upb['timestamp'].values/1000 -bin['timestamp'].values[0]/1000
 
 
     plt.figure(figsize=(10, 6))
     plt.plot(time_binance, price_binance, label='Price Binance', marker='o')
     plt.plot(time_upbit, price_upbit, label='Price Upbit', marker='o')
 
-    plt.xlabel('Time (milisecond)')
+    plt.xlabel('Time (second)')
     plt.ylabel('Price (USD)')
     plt.title(f'Price Comparison of {title}: Upbit vs. Binance')
     plt.legend()
@@ -33,4 +33,4 @@ def plotapi(title, upbitcu):
     plt.show()
 
 
-plotapi('xrp', 'krw')
+plotapi('eth', 'krw')
