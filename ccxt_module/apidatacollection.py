@@ -35,7 +35,6 @@ def apidata(title, upbitcu, currency_binance, currency_upbit, duration):
         'secret': secret_upbit,
         'enableRateLimit': True,
         'options': {
-            'defaultType': 'future'
         }
     })
 
