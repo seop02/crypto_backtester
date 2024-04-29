@@ -10,8 +10,8 @@ if __name__=='__main__':
             '2024-04-11'
             ]
     dev_cut = {
-        'KRW-BTC': 5e-12, 'KRW-ETH': 6e-8, 'KRW-ETC': 3.5e-6, 'KRW-ANKR': 0.00015, 'KRW-STORJ': 1e-6, 
-        'KRW-MBL': 0.04, 'KRW-MED': 0.001, 'KRW-DKA': 0.024, 'KRW-BTG': 1e-6, 'KRW-GLM': 2e-7, 
+        'KRW-BTC': 1.5e-10, 'KRW-ETH': 3e-9, 'KRW-ETC': 3.5e-6, 'KRW-ANKR': 0.00015, 'KRW-STORJ': 1e-6, 
+        'KRW-MBL': 0.04, 'KRW-MED': 0.001, 'KRW-DKA': 0.024, 'KRW-BTG': 1e-6, 'KRW-GLM': 5.5e-5, 
         'KRW-NEAR': 4e-6, 'KRW-JST': 0.0007, 'KRW-TFUEL': 0.03, 'KRW-QTUM': 0.003,
         'KRW-ID': 0.0002, 'KRW-CELO': 0.0005, 'KRW-POWR': 0.0004, 'KRW-PDA': 0.0003, 'KRW-IOST': 0.001,
         'KRW-ZRX': 1e-6, 'KRW-LSK': 1e-6, 'KRW-HIFI': 1e-6, 'KRW-SOL': 1e-6, 'KRW-CTC': 2e-6,
@@ -24,6 +24,8 @@ if __name__=='__main__':
         'KRW-PUNDIX': 0.4e10, 'KRW-ADA':0.1e10
     }
     coins = list(dev_cut.keys())
-    
+    #coins = ['KRW-ETH']
+    dict = {'2024-04-11': {'buying_idx': [], 'bought_idx': [], 'selling_idx': [], 'sold_idx': []}}
+   
     sim = backtrader(coins, dates)
-    sim.run_simulation(coins, dev_cut, 1.05, True)
+    sim.run_simulation(coins, dev_cut, 1.1, True)

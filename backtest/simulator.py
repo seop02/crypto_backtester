@@ -19,11 +19,11 @@ class backtrader():
     
         self.transaction = 0.9995**2
         self.profit = 1
-        statuses = ['buying', 'bought', 'selling', 'sold']
+        self.statuses = ['buying', 'bought', 'selling', 'sold']
         self.daily_profits = {coin: {date: 0 for date in dates} for coin in coins}
-        self.transaction_times = {f'{status}_times': [] for status in statuses}
+        self.transaction_times = {f'{status}_times': [] for status in self.statuses}
         self.transaction_idx = {
-            date : {f'{status}_idx': [] for status in statuses} for date in dates
+            date : {f'{status}_idx': [] for status in self.statuses} for date in dates
         }
         
         
@@ -63,6 +63,7 @@ class backtrader():
     
     def simulate(self, dev_cut, profit_cut, date, coin):
         file_path = f'{data_path}/acc/{date}/{date[:10]}_{coin}_upbit_volume.csv'
+        
         if os.path.exists(file_path):
             df = pd.read_csv(file_path, index_col=0)
             times = df['time'].values
@@ -77,7 +78,7 @@ class backtrader():
             
             buying_price = 0
             max_profit = 0
-            profit = 0
+            profit = 1
             
             for idx, dev in enumerate(devs):
                 if self.status != "SOLD" and buying_price != 0:
@@ -91,35 +92,44 @@ class backtrader():
                 if idx > 5:
                     mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
                     
-                condition_1 = dev>dev_cut and self.status == 'sold' and idx>5 and mean_dev != 0
-                
+                condition_1 = dev>dev_cut and self.status == 'sold' and idx>5
+                # if dev>dev_cut:
+                #     print('HIIIII')
+                #     print(self.status)
+                #     print(idx)
                 if condition_1 == True:
                     self.status = 'buying'
                     buying_price = price[idx]
                     self.transaction_times[f'{self.status}_times'].append(times[idx])
+                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
                     
                 if self.status == 'buying' and buying_price >= price[idx]:
                     self.status = 'bought'
                     self.transaction_times[f'{self.status}_times'].append(times[idx])
+                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
                     
-                if self.status == 'bought' and inst_profit <= -0.01:
+                if self.status == 'bought' and inst_profit <= -0.05:
                     self.status = 'selling'
                     selling_price = price[idx]
                     self.transaction_times[f'{self.status}_times'].append(times[idx])
+                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
                     
-                if self.status == 'bought' and  max_profit>0.01 and inst_profit<max_profit/3:
-                    self.status = 'selling'
-                    selling_price = price[idx]
-                    self.transaction_times[f'{self.status}_times'].append(times[idx])
-                
+                # if self.status == 'bought' :
+                #     self.status = 'selling'
+                #     selling_price = price[idx]
+                #     self.transaction_times[f'{self.status}_times'].append(times[idx])
+                #     self.transaction_idx[date][f'{self.status}_idx'].append(idx)
+                    
                 if self.status == 'bought' and inst_profit>profit_cut:
                     self.status = 'selling'
                     selling_price = price[idx]
                     self.transaction_times[f'{self.status}_times'].append(times[idx])
-                
+                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
+                    
                 if self.status == 'selling' and selling_price <= price[idx]:
                     self.status = 'sold'
                     self.transaction_times[f'{self.status}_times'].append(times[idx])
+                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
                     inst_profit = (self.transaction*price[idx]/buying_price)
                     profit *= inst_profit
                     max_profit = 0
@@ -133,6 +143,13 @@ class backtrader():
                     time_diff = times[idx]-self.transaction_times[f'{self.status}_times'][-1]
                     if time_diff > 30:
                         self.status = 'bought'
+            if self.status == 'bought':
+                self.status = 'sold'
+                self.transaction_times[f'{self.status}_times'].append(times[idx])
+                self.transaction_idx[date][f'{self.status}_idx'].append(idx)
+                inst_profit = (self.transaction*price[idx]/buying_price)
+                profit *= inst_profit
+                max_profit = 0
         
         else:
             print(f'{file_path} does not exists!!!')
@@ -143,15 +160,20 @@ class backtrader():
         self.simulate(dev_cut, profit_cut, date, coin)
         LOG.info(f'{coin} PROFIT for {date}: {self.daily_profits[coin][date]}')
     
-    def run_simulation(self, coins, dev_cut, profit_cut, vis=None):
+    def run_simulation(self, coins, dev_cut, profit_cut, mode):
         vis = generate_plots()
         for coin in coins:
             for date in self.dates:
                 self.update_profit(dev_cut[coin], profit_cut, date, coin)
-                if len(self.transaction_idx[date]['bought_idx']) != 0 and vis == True:
+                
+                if len(self.transaction_idx[date]['bought_idx']) != 0 and mode == True:
                     vis.plot_transactions(date, coin, self.transaction_idx[date])
+                elif mode == True:
+                    vis.just_plot(date, coin)
             if self.daily_profits[coin][date] != 0:
                 vis.plot_profits(coin, self.daily_profits[coin])
+            for status in self.statuses:
+                self.transaction_idx[date][f'{status}_idx'] = []
     
     
         
