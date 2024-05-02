@@ -61,7 +61,7 @@ class backtrader():
         data = pd.read_csv(path, index_col=0)
         return data
     
-    def simulate(self, dev_cut, profit_cut, date, coin):
+    def simulate(self, dev_cut, profit_cut, date, coin) -> float:
         file_path = f'{data_path}/acc/{date}/{date[:10]}_{coin}_upbit_volume.csv'
         
         if os.path.exists(file_path):
@@ -81,18 +81,18 @@ class backtrader():
             profit = 1
             
             for idx, dev in enumerate(devs):
-                if self.status != "SOLD" and buying_price != 0:
-                    inst_profit = (self.transaction*price[idx]/buying_price)-1
+                if self.status != "sold" and buying_price != 0:
+                    inst_profit = (self.transaction*price[idx]/buying_price)
                     max_price= price[idx]
                     max_idx = idx
                     max_profit = max(inst_profit, max_profit)
                 else:
-                    inst_profit = 0
+                    inst_profit = 1
                     
                 if idx > 5:
                     mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
                     
-                condition_1 = dev>dev_cut and self.status == 'sold' and idx>5
+                condition_1 = dev>=dev_cut and self.status == 'sold' and idx>5
                 # if dev>dev_cut:
                 #     print('HIIIII')
                 #     print(self.status)
@@ -120,7 +120,7 @@ class backtrader():
                 #     self.transaction_times[f'{self.status}_times'].append(times[idx])
                 #     self.transaction_idx[date][f'{self.status}_idx'].append(idx)
                     
-                if self.status == 'bought' and inst_profit>profit_cut:
+                if self.status == 'bought' and inst_profit>=profit_cut:
                     self.status = 'selling'
                     selling_price = price[idx]
                     self.transaction_times[f'{self.status}_times'].append(times[idx])
@@ -153,11 +153,13 @@ class backtrader():
         
         else:
             print(f'{file_path} does not exists!!!')
+            profit = 1
         
         self.daily_profits[coin][date] = profit
+        return profit
             
     def update_profit(self, dev_cut, profit_cut, date, coin):
-        self.simulate(dev_cut, profit_cut, date, coin)
+        profit = self.simulate(dev_cut, profit_cut, date, coin)
         LOG.info(f'{coin} PROFIT for {date}: {self.daily_profits[coin][date]}')
     
     def run_simulation(self, coins, dev_cut, profit_cut, mode):
