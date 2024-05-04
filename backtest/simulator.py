@@ -20,7 +20,7 @@ class backtrader():
         self.transaction = 0.9995**2
         self.profit = 1
         self.statuses = ['buying', 'bought', 'selling', 'sold']
-        self.daily_profits = {coin: {date: 0 for date in dates} for coin in coins}
+        self.daily_profits = {date: 0 for date in dates}
         self.transaction_times = {f'{status}_times': [] for status in self.statuses}
         self.transaction_idx = {
             date : {f'{status}_idx': [] for status in self.statuses} for date in dates
@@ -56,126 +56,197 @@ class backtrader():
         else:
             return 0.0
         
-    def import_data(self, coin, date) -> DataFrame:
-        path = f'{data_path}/acc/{date}/{date[:10]}_{coin}_upbit_volume.csv'
-        data = pd.read_csv(path, index_col=0)
+    def import_individual_data(self, coin, date, data_type) -> DataFrame:
+        if data_type == 'acc':   
+            path = f'{data_path}/acc/{date}/{date[:10]}_{coin}_upbit_volume.csv'
+            data = pd.read_csv(path, index_col=0)
+        elif data_type == 'ticker':
+            path = f'{data_path}/ticker/{date}/upbit_volume.csv'
+            raw_data = pd.read_csv(path, index_col=0)
+            data = raw_data[raw_data['coin'] == coin]
         return data
     
-    def simulate(self, dev_cut, profit_cut, date, coin) -> float:
-        file_path = f'{data_path}/acc/{date}/{date[:10]}_{coin}_upbit_volume.csv'
+    def import_all(self, date):
+        path = f'{data_path}/ticker/{date}/upbit_volume.csv'
+        df = pd.read_csv(path, index_col=0)
+        return df
+    
+    def simulate(self, df:DataFrame, dev_cut, profit_cut, date) -> float:      
+        times = df['time'].values
+        vol = df['acc_trade_volume'].values
+        devs = df['dev'].values
+        price = df['trade_price'].values
+        highs = df['high'].values
+        status = 'sold'
         
-        if os.path.exists(file_path):
-            df = pd.read_csv(file_path, index_col=0)
-            times = df['time'].values
-            vol = df['acc_trade_volume'].values
-            devs = df['dev'].values
-            price = df['trade_price'].values
-            highs = df['high'].values
-            ask_bid = df['ask_bid'].values
-            
-            
-            self.status = 'sold'
-            
-            buying_price = 0
-            max_profit = 0
-            profit = 1
-            
-            for idx, dev in enumerate(devs):
-                if self.status != "sold" and buying_price != 0:
-                    inst_profit = (self.transaction*price[idx]/buying_price)
-                    max_price= price[idx]
-                    max_idx = idx
-                    max_profit = max(inst_profit, max_profit)
-                else:
-                    inst_profit = 1
-                    
-                if idx > 5:
-                    mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
-                    
-                condition_1 = dev>=dev_cut and self.status == 'sold' and idx>5
-                # if dev>dev_cut:
-                #     print('HIIIII')
-                #     print(self.status)
-                #     print(idx)
-                if condition_1 == True:
-                    self.status = 'buying'
-                    buying_price = price[idx]
-                    self.transaction_times[f'{self.status}_times'].append(times[idx])
-                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
-                    
-                if self.status == 'buying' and buying_price >= price[idx]:
-                    self.status = 'bought'
-                    self.transaction_times[f'{self.status}_times'].append(times[idx])
-                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
-                    
-                if self.status == 'bought' and inst_profit <= -0.05:
-                    self.status = 'selling'
-                    selling_price = price[idx]
-                    self.transaction_times[f'{self.status}_times'].append(times[idx])
-                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
-                    
-                # if self.status == 'bought' :
-                #     self.status = 'selling'
-                #     selling_price = price[idx]
-                #     self.transaction_times[f'{self.status}_times'].append(times[idx])
-                #     self.transaction_idx[date][f'{self.status}_idx'].append(idx)
-                    
-                if self.status == 'bought' and inst_profit>=profit_cut:
-                    self.status = 'selling'
-                    selling_price = price[idx]
-                    self.transaction_times[f'{self.status}_times'].append(times[idx])
-                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
-                    
-                if self.status == 'selling' and selling_price <= price[idx]:
-                    self.status = 'sold'
-                    self.transaction_times[f'{self.status}_times'].append(times[idx])
-                    self.transaction_idx[date][f'{self.status}_idx'].append(idx)
-                    inst_profit = (self.transaction*price[idx]/buying_price)
-                    profit *= inst_profit
-                    max_profit = 0
-                    
-                if self.status == 'buying':
-                    time_diff = times[idx]-self.transaction_times[f'{self.status}_times'][-1]
-                    if time_diff > 30:
-                        self.status = 'sold'
+        
+        buying_price = 0
+        max_profit = 0
+        profit = 1
+        
+        for idx, dev in enumerate(devs):
+            if status != "sold" and buying_price != 0:
+                inst_profit = (self.transaction*price[idx]/buying_price)
+                max_price= price[idx]
+                max_idx = idx
+                max_profit = max(inst_profit, max_profit)
+            else:
+                inst_profit = 1
                 
-                if self.status == 'selling':
-                    time_diff = times[idx]-self.transaction_times[f'{self.status}_times'][-1]
-                    if time_diff > 30:
-                        self.status = 'bought'
-            if self.status == 'bought':
-                self.status = 'sold'
-                self.transaction_times[f'{self.status}_times'].append(times[idx])
-                self.transaction_idx[date][f'{self.status}_idx'].append(idx)
+            if idx > 5:
+                mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
+                
+            condition_1 = dev>=dev_cut and status == 'sold' and idx>5
+            # if dev>dev_cut:
+            #     print('HIIIII')
+            #     print(self.status)
+            #     print(idx)
+            if condition_1 == True:
+                status = 'buying'
+                buying_price = price[idx]
+                self.transaction_times[f'{status}_times'].append(times[idx])
+                self.transaction_idx[date][f'{status}_idx'].append(idx)
+                
+            if status == 'buying' and buying_price >= price[idx]:
+                status = 'bought'
+                self.transaction_times[f'{status}_times'].append(times[idx])
+                self.transaction_idx[date][f'{status}_idx'].append(idx)
+                
+            if status == 'bought' and inst_profit <= -0.05:
+                status = 'selling'
+                selling_price = price[idx]
+                self.transaction_times[f'{status}_times'].append(times[idx])
+                self.transaction_idx[date][f'{status}_idx'].append(idx)
+                
+            if status == 'bought' and inst_profit>=profit_cut:
+                status = 'selling'
+                selling_price = price[idx]
+                self.transaction_times[f'{status}_times'].append(times[idx])
+                self.transaction_idx[date][f'{status}_idx'].append(idx)
+                
+            if status == 'selling' and selling_price <= price[idx]:
+                status = 'sold'
+                self.transaction_times[f'{status}_times'].append(times[idx])
+                self.transaction_idx[date][f'{status}_idx'].append(idx)
                 inst_profit = (self.transaction*price[idx]/buying_price)
                 profit *= inst_profit
                 max_profit = 0
-        
-        else:
-            print(f'{file_path} does not exists!!!')
-            profit = 1
-        
-        self.daily_profits[coin][date] = profit
+                
+            if status == 'buying':
+                time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
+                if time_diff > 30:
+                    status = 'sold'
+            
+            if status == 'selling':
+                time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
+                if time_diff > 30:
+                    status = 'bought'
+        if status == 'bought':
+            status = 'sold'
+            self.transaction_times[f'{status}_times'].append(times[idx])
+            self.transaction_idx[date][f'{status}_idx'].append(idx)
+            inst_profit = (self.transaction*price[idx]/buying_price)
+            profit *= inst_profit
+            max_profit = 0
+
         return profit
             
-    def update_profit(self, dev_cut, profit_cut, date, coin):
-        profit = self.simulate(dev_cut, profit_cut, date, coin)
-        LOG.info(f'{coin} PROFIT for {date}: {self.daily_profits[coin][date]}')
+    def update_profit(self, dev_cut, profit_cut, date, coin, data_type):
+        profit = self.simulate(dev_cut, profit_cut, date, data_type, coin)
+        LOG.info(f'{coin} PROFIT for {date}: {self.daily_profits[date]}')
     
-    def run_simulation(self, coins, dev_cut, profit_cut, mode):
+    def individual_simulation(self, coin:str, dev_cut:dict, profit_cut:dict):
         vis = generate_plots()
-        for coin in coins:
-            for date in self.dates:
-                self.update_profit(dev_cut[coin], profit_cut, date, coin)
+        for date in self.dates:
+            if date == '2024-05-03':
+                mode = 'ticker'
+            else:
+                mode = 'acc'
+            df = self.import_individual_data(coin, date, mode)
+            profit = self.simulate(df, dev_cut[coin], profit_cut[coin], date)
+            vis
+            self.daily_profits[date] = profit
+            if profit != 1:
+                vis.plot_transactions(df, self.transaction_idx[date], date, coin)
+            else:
+                vis.just_plot(df)
+            
+            self.transaction_idx = {
+            date : {f'{status}_idx': [] for status in self.statuses} for date in self.dates
+            }
                 
-                if len(self.transaction_idx[date]['bought_idx']) != 0 and mode == True:
-                    vis.plot_transactions(date, coin, self.transaction_idx[date])
-                elif mode == True:
-                    vis.just_plot(date, coin)
-            if self.daily_profits[coin][date] != 0:
-                vis.plot_profits(coin, self.daily_profits[coin])
-            for status in self.statuses:
-                self.transaction_idx[date][f'{status}_idx'] = []
+        vis.plot_profits(coin, self.daily_profits)
+        
+    def simulate_all(self, date:str, dev_cut:dict, profit_cut:dict):
+        df = self.import_all(date)
+        times = df['time'].values
+        vol = df['acc_trade_volume'].values
+        devs = df['dev'].values
+        price = df['trade_price'].values
+        highs = df['high'].values
+        coins = df['coin'].values
+        trading_coins = set(dev_cut.keys())
+        status = 'sold'
+        
+        buying_price = 0
+        max_profit = 0
+        profit = 1
+        
+        for idx, dev in enumerate(devs):
+            coin = coins[idx]
+            if status != "sold" and buying_price != 0:
+                inst_profit = (self.transaction*price[idx]/buying_price)
+                max_profit = max(inst_profit, max_profit)
+            else:
+                inst_profit = 1
+                
+            if idx > 5:
+                mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
+                
+            condition_1 = coin in trading_coins and dev>=dev_cut[coin] and status == 'sold' and idx>5
+            # if dev>dev_cut:
+            #     print('HIIIII')
+            #     print(self.status)
+            #     print(idx)
+            if condition_1 == True:
+                status = 'buying'
+                buying_price = price[idx]
+                
+            if status == 'buying' and buying_price >= price[idx]:
+                status = 'bought'
+                
+            if status == 'bought' and inst_profit <= -0.05:
+                status = 'selling'
+                selling_price = price[idx]
+                
+            if status == 'bought' and inst_profit>=profit_cut[coin]:
+                status = 'selling'
+                selling_price = price[idx]
+                
+            if status == 'selling' and selling_price <= price[idx]:
+                status = 'sold'
+                inst_profit = (self.transaction*price[idx]/buying_price)
+                profit *= inst_profit
+                max_profit = 0
+                
+            if status == 'buying':
+                time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
+                if time_diff > 30:
+                    status = 'sold'
+            
+            if status == 'selling':
+                time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
+                if time_diff > 30:
+                    status = 'bought'
+        if status == 'bought':
+            status = 'sold'
+            inst_profit = (self.transaction*price[idx]/buying_price)
+            profit *= inst_profit
+            max_profit = 0
+
+        return profit
+        
+            
     
     
         
