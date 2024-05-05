@@ -187,14 +187,15 @@ class backtrader():
         coins = df['coin'].values
         trading_coins = set(dev_cut.keys())
         status = 'sold'
-        
+        traded_coins = []
         buying_price = 0
         max_profit = 0
         profit = 1
+        bought_coin = 'KRW'
         
         for idx, dev in enumerate(devs):
             coin = coins[idx]
-            if status != "sold" and buying_price != 0:
+            if status != "sold" and buying_price != 0 and coin == bought_coin:
                 inst_profit = (self.transaction*price[idx]/buying_price)
                 max_profit = max(inst_profit, max_profit)
             else:
@@ -211,15 +212,19 @@ class backtrader():
             if condition_1 == True:
                 status = 'buying'
                 buying_price = price[idx]
+                bought_coin = coin
+                LOG.info(f'buying {coin} at price: {buying_price}')
                 
             if status == 'buying' and buying_price >= price[idx]:
                 status = 'bought'
+                bought_coin = coin
+                traded_coins.append(coins[idx])
                 
             if status == 'bought' and inst_profit <= -0.05:
                 status = 'selling'
                 selling_price = price[idx]
                 
-            if status == 'bought' and inst_profit>=profit_cut[coin]:
+            if status == 'bought' and coin in trading_coins and inst_profit>=profit_cut[coin]:
                 status = 'selling'
                 selling_price = price[idx]
                 
@@ -227,7 +232,9 @@ class backtrader():
                 status = 'sold'
                 inst_profit = (self.transaction*price[idx]/buying_price)
                 profit *= inst_profit
+                LOG.info(f'selling {coin} at price: {price[idx]} profit: {profit}')
                 max_profit = 0
+                buying_price = 0
                 
             if status == 'buying':
                 time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
@@ -240,10 +247,12 @@ class backtrader():
                     status = 'bought'
         if status == 'bought':
             status = 'sold'
-            inst_profit = (self.transaction*price[idx]/buying_price)
+            filtered_df = df[df['coin'] == bought_coin]
+            final_price = filtered_df['trade_price'].values[-1]
+            inst_profit = (self.transaction*final_price/buying_price)
             profit *= inst_profit
             max_profit = 0
-
+        LOG.info(f'{date} overall_profit: {profit} traded_coins: {traded_coins}')
         return profit
         
             

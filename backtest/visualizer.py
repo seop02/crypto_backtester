@@ -16,22 +16,27 @@ class generate_plots():
         sold_price = [data['trade_price'].values[i] for i in sold_idx]
         sold_time = [data['time'].values[i] for i in sold_idx]
         
-        figure = plt.figure(figsize=(10,6))
-        ax1, ax2 = figure.subplots(2)
-        ax1.plot(data['time'], data['trade_price'], color='black')
-        ax1.scatter(bought_time, bought_price, color='blue')
-        ax1.scatter(sold_time, sold_price, color='red')
-        ax2.plot(data['time'], data['dev'], color='black')
+        ma_list = [1000, 2000, 5000]
+        for ma in ma_list:
+            data[f'ma{ma}'] = data['trade_price'].rolling(ma).mean()
+        
+        fig, axes = plt.subplots(nrows=2, ncols=1)
+        data[['trade_price'], data['ma1000'], data['ma2000'], data['ma5000']].plot(ax=axes[0,0])
+        
+        axes[0,0].scatter(bought_time, bought_price, color='blue')
+        axes[0,0].scatter(sold_time, sold_price, color='red')
+        axes[1,0].plot(data['time'], data['dev'], color='black')
         plt.title(f'{date} {coin}')
         plt.show()
     
     def just_plot(self, data:DataFrame):
+        ma_list = [1000, 2000, 5000]
+        for ma in ma_list:
+            data[f'ma{ma}'] = data['trade_price'].rolling(ma).mean()
         figure = plt.figure(figsize=(10,6))
         ax1, ax2 = figure.subplots(2)
-        ax1.plot(data['time'], data['trade_price'], color='black')
-        # ax1.scatter(bought_time, bought_price, color='blue')
-        # ax1.scatter(sold_time, sold_price, color='red')
-        ax2.plot(data['time'], data['dev'], color='black')
+        data[['trade_price'], data['ma1000'], data['ma2000'], data['ma5000']].plot(ax=ax1)
+        data['dev'].plot(ax=ax2)
         plt.show()
         
     def plot_profits(self, coin, daily_profit:dict):
