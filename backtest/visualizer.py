@@ -3,6 +3,7 @@ import datetime
 import pandas as pd
 from pandas import DataFrame
 import pyupbit
+import numpy as np
 from dev_trader import data_path
 
 class generate_plots():
@@ -83,7 +84,35 @@ class generate_plots():
         plt.tight_layout()
         plt.show()
         
-    
+    def plot_acc_vol(self, coin:str, date:str, mode:str, duration:float):
+        if mode == 'acc':
+            path = f'{data_path}/acc/{date}/{date[:10]}_{coin}_upbit_volume.csv'
+            data = pd.read_csv(path, index_col=0)
+        elif mode == 'ticker':
+            file_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
+            df = pd.read_csv(file_path, index_col=0)
+            df = df['coin' == coin]
+        else:
+            raise ValueError('invalid value for mode!')
+        
+        times = df['time'].values
+        start_time = times[0]
+        start_vol = df['acc_trade_volume'].values(0)
+        sub_acc = []
+        for idx, time in enumerate(times):
+            if time-start_time > duration:
+                start_time = 0
+                start_vol = df['acc_trade_volume'].values[idx]          
+            acc_vol = df['acc_trade_volume'].values[idx] - start_vol
+            sub_acc.append(acc_vol)
+        df['5min_acc'] = np.array(sub_acc)
+        figure = plt.figure(figsize=(10,6))
+        ax1, ax2 = figure.subplots(2)
+        ax1.plot(df['time'].values, df['trade_price'].values, color='black')
+        ax2.plot(df['time'].values, df['5min_acc'].values, color='black')
+        ax1.set_title(f'Plot for {coin} {date}')
+        plt.show()
+                
 
         
         

@@ -26,7 +26,8 @@ if __name__=='__main__':
     dict = {'2024-04-11': {'buying_idx': [], 'bought_idx': [], 'selling_idx': [], 'sold_idx': []}}
     sim = backtrader(coins, dates)
     vis = generate_plots()
-    df = sim.individual_simulation('KRW-LINK', dev_cut, profit_cut)
+    #df = sim.individual_simulation('KRW-LINK', dev_cut, profit_cut)
+    vis.plot_acc_vol('KRW-BTC', '2024-05-03', 'ticker', 300)
     # vis.plot_ticker(['KRW-GLM', 'KRW-BTG'], dates[-1])
     # for coin in coins:
     #     sim.individual_simulation(coin, dev_cut, profit_cut)
