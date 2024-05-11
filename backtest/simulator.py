@@ -7,6 +7,8 @@ import os
 import logging
 from pandas import DataFrame
 from backtest.visualizer import generate_plots
+from scipy.stats import linregress
+import math
 
 logging.basicConfig(level=logging.WARNING)
 logging.getLogger().setLevel(logging.INFO)
@@ -71,7 +73,20 @@ class backtrader():
         df = pd.read_csv(path, index_col=0)
         return df
     
-    def simulate(self, df:DataFrame, dev_cut, profit_cut, date) -> float:      
+    def is_decreasing_exponential(data):
+        if len(data) < 10:
+            return False
+        
+        # Take the logarithm of the data
+        log_data = [math.log(x) for x in data[-10:]]
+        
+        # Perform linear regression on log_data
+        slope, _, _, _, _ = linregress(range(len(log_data)), log_data)
+        
+        # Check if the slope is negative
+        return slope < 0
+    
+    def simulate(self, df:DataFrame, dev_cut, profit_cut, date, duration=300) -> float:      
         times = df['time'].values
         vol = df['acc_trade_volume'].values
         devs = df['dev'].values
@@ -84,7 +99,19 @@ class backtrader():
         max_profit = 0
         profit = 1
         
+        acc_vol = []
+        start_time = times[0]
+        
         for idx, dev in enumerate(devs):
+            time = times[idx]
+            if time-start_time > duration:
+                start_time = time
+                start_vol = df['acc_trade_volume'].values[idx]
+                if acc_vol < 0:
+                    start_vol = df['acc_trade_volume'].values[idx]
+                acc_vol.append(start_vol)
+   
+            
             if status != "sold" and buying_price != 0:
                 inst_profit = (self.transaction*price[idx]/buying_price)
                 max_price= price[idx]
@@ -158,7 +185,7 @@ class backtrader():
     def individual_simulation(self, coin:str, dev_cut:dict, profit_cut:dict):
         vis = generate_plots()
         for date in self.dates:
-            if date == '2024-05-03':
+            if date == '2024-05-03' or date == '2024-04-11' :
                 mode = 'ticker'
             else:
                 mode = 'acc'
@@ -177,6 +204,9 @@ class backtrader():
                 
         vis.plot_profits(coin, self.daily_profits)
         
+    def update_target_profit(self, time_diff):
+        return 1.001+0.099*np.exp(-time_diff/3000)
+    
     def simulate_all(self, date:str, dev_cut:dict, profit_cut:dict):
         df = self.import_all(date)
         times = df['time'].values
@@ -201,6 +231,10 @@ class backtrader():
             else:
                 inst_profit = 1
                 
+            if status == 'bought':
+                time_diff = times[idx]-bought_time
+                profit_cut[coin] = self.update_target_profit(time_diff)
+                
             if idx > 5:
                 mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
                 
@@ -215,9 +249,14 @@ class backtrader():
                 bought_coin = coin
                 LOG.info(f'buying {coin} at price: {buying_price}')
                 
+            if coin in trading_coins and dev>=dev_cut[coin] and status == 'bought':
+                traded_coins.append(coins[idx])
+                
             if status == 'buying' and buying_price >= price[idx]:
                 status = 'bought'
                 bought_coin = coin
+                bought_time = times[idx]
+                bought_price = price[idx]
                 traded_coins.append(coins[idx])
                 
             if status == 'bought' and inst_profit <= -0.05:
@@ -253,7 +292,7 @@ class backtrader():
             profit *= inst_profit
             max_profit = 0
         LOG.info(f'{date} overall_profit: {profit} traded_coins: {traded_coins}')
-        return profit
+        return profit, traded_coins
         
             
     
