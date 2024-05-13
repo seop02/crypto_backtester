@@ -9,6 +9,7 @@ from pandas import DataFrame
 from backtest.visualizer import generate_plots
 from scipy.stats import linregress
 import math
+from datetime import datetime
 
 logging.basicConfig(level=logging.WARNING)
 logging.getLogger().setLevel(logging.INFO)
@@ -58,11 +59,14 @@ class backtrader():
         else:
             return 0.0
         
-    def import_individual_data(self, coin, date, data_type) -> DataFrame:
-        if data_type == 'acc':   
+    def import_individual_data(self, coin, date) -> DataFrame:
+        default_date = datetime.strptime('2024-04-28', '%Y-%m-%d')
+        input_date = datetime.strptime(date, '%Y-%m-%d')
+        
+        if input_date<default_date:   
             path = f'{data_path}/acc/{date}/{date[:10]}_{coin}_upbit_volume.csv'
             data = pd.read_csv(path, index_col=0)
-        elif data_type == 'ticker':
+        else:
             path = f'{data_path}/ticker/{date}/upbit_volume.csv'
             raw_data = pd.read_csv(path, index_col=0)
             data = raw_data[raw_data['coin'] == coin]
@@ -86,95 +90,106 @@ class backtrader():
         # Check if the slope is negative
         return slope < 0
     
-    def simulate(self, df:DataFrame, dev_cut, profit_cut, date, duration=300) -> float:      
-        times = df['time'].values
-        vol = df['acc_trade_volume'].values
-        devs = df['dev'].values
-        price = df['trade_price'].values
-        highs = df['high'].values
-        status = 'sold'
-        
-        
-        buying_price = 0
-        max_profit = 0
+    def simulate(self, dates, dev_cut, profit_cut, coin, duration=300) -> float: 
         profit = 1
-        
-        acc_vol = []
-        start_time = times[0]
-        
-        for idx, dev in enumerate(devs):
-            time = times[idx]
-            if time-start_time > duration:
-                start_time = time
-                start_vol = df['acc_trade_volume'].values[idx]
-                if acc_vol < 0:
-                    start_vol = df['acc_trade_volume'].values[idx]
-                acc_vol.append(start_vol)
-   
+        for date in dates:
+            #LOG.info(f'{coin} {date}')
+            df = self.import_individual_data(coin, date)
+            times = df['time'].values
+            vol = df['acc_trade_volume'].values
+            devs = df['dev'].values
+            price = df['trade_price'].values
+            highs = df['high'].values
+            status = 'sold'
+            bought_coin = 'KRW'
+            buying_price = 0
+            bought_time = 0
             
-            if status != "sold" and buying_price != 0:
-                inst_profit = (self.transaction*price[idx]/buying_price)
-                max_price= price[idx]
-                max_idx = idx
-                max_profit = max(inst_profit, max_profit)
-            else:
-                inst_profit = 1
+            buying_price = 0
+            max_profit = 0
+            
+            acc_vol = []
+            start_time = times[0]
+            
+            for idx, dev in enumerate(devs):
+                time = times[idx]
+                # if time-start_time > duration:
+                #     start_time = time
+                #     start_vol = df['acc_trade_volume'].values[idx]
+                #     if acc_vol < 0:
+                #         start_vol = df['acc_trade_volume'].values[idx]
+                #     acc_vol.append(start_vol)
+                    
+                if status == 'bought':
+                    time_diff = times[idx]-bought_time
+                    profit_cut[coin] = self.update_target_profit(time_diff)
+    
+                if status != "sold" and buying_price != 0:
+                    inst_profit = (self.transaction*price[idx]/buying_price)
+                    max_price= price[idx]
+                    max_idx = idx
+                    max_profit = max(inst_profit, max_profit)
+                else:
+                    inst_profit = 1
+                    
+                if idx > 5:
+                    mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
+                    
+                condition_1 = dev>=dev_cut and status == 'sold' and idx>5
+                # if dev>dev_cut:
+                #     print('HIIIII')
+                #     print(self.status)
+                #     print(idx)
+                if condition_1 == True:
+                    status = 'buying'
+                    buying_price = price[idx]
+                    self.transaction_times[f'{status}_times'].append(times[idx])
+                    self.transaction_idx[date][f'{status}_idx'].append(idx)
+                    
+                if status == 'buying' and buying_price >= price[idx]:
+                    status = 'bought'
+                    self.transaction_times[f'{status}_times'].append(times[idx])
+                    self.transaction_idx[date][f'{status}_idx'].append(idx)
+                    buying_price = price[idx]
+                    bought_time = times[idx]
+                    
+                    
+                if status == 'bought' and inst_profit <= 0.99:
+                    status = 'selling'
+                    selling_price = price[idx]
+                    self.transaction_times[f'{status}_times'].append(times[idx])
+                    self.transaction_idx[date][f'{status}_idx'].append(idx)
+                    
+                if status == 'bought' and inst_profit>=profit_cut[coin]:
+                    status = 'selling'
+                    selling_price = price[idx]
+                    self.transaction_times[f'{status}_times'].append(times[idx])
+                    self.transaction_idx[date][f'{status}_idx'].append(idx)
+                    
+                if status == 'selling' and selling_price <= price[idx]:
+                    status = 'sold'
+                    self.transaction_times[f'{status}_times'].append(times[idx])
+                    self.transaction_idx[date][f'{status}_idx'].append(idx)
+                    inst_profit = (self.transaction*price[idx]/buying_price)
+                    profit *= inst_profit
+                    max_profit = 0
+                    
+                if status == 'buying':
+                    time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
+                    if time_diff > 30:
+                        status = 'sold'
                 
-            if idx > 5:
-                mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
-                
-            condition_1 = dev>=dev_cut and status == 'sold' and idx>5
-            # if dev>dev_cut:
-            #     print('HIIIII')
-            #     print(self.status)
-            #     print(idx)
-            if condition_1 == True:
-                status = 'buying'
-                buying_price = price[idx]
-                self.transaction_times[f'{status}_times'].append(times[idx])
-                self.transaction_idx[date][f'{status}_idx'].append(idx)
-                
-            if status == 'buying' and buying_price >= price[idx]:
-                status = 'bought'
-                self.transaction_times[f'{status}_times'].append(times[idx])
-                self.transaction_idx[date][f'{status}_idx'].append(idx)
-                
-            if status == 'bought' and inst_profit <= -0.05:
-                status = 'selling'
-                selling_price = price[idx]
-                self.transaction_times[f'{status}_times'].append(times[idx])
-                self.transaction_idx[date][f'{status}_idx'].append(idx)
-                
-            if status == 'bought' and inst_profit>=profit_cut:
-                status = 'selling'
-                selling_price = price[idx]
-                self.transaction_times[f'{status}_times'].append(times[idx])
-                self.transaction_idx[date][f'{status}_idx'].append(idx)
-                
-            if status == 'selling' and selling_price <= price[idx]:
+                if status == 'selling':
+                    time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
+                    if time_diff > 30:
+                        status = 'bought'
+            if status == 'bought':
                 status = 'sold'
                 self.transaction_times[f'{status}_times'].append(times[idx])
                 self.transaction_idx[date][f'{status}_idx'].append(idx)
                 inst_profit = (self.transaction*price[idx]/buying_price)
                 profit *= inst_profit
                 max_profit = 0
-                
-            if status == 'buying':
-                time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
-                if time_diff > 30:
-                    status = 'sold'
-            
-            if status == 'selling':
-                time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
-                if time_diff > 30:
-                    status = 'bought'
-        if status == 'bought':
-            status = 'sold'
-            self.transaction_times[f'{status}_times'].append(times[idx])
-            self.transaction_idx[date][f'{status}_idx'].append(idx)
-            inst_profit = (self.transaction*price[idx]/buying_price)
-            profit *= inst_profit
-            max_profit = 0
 
         return profit
             
