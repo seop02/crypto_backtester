@@ -48,27 +48,48 @@ def merge_data2(dates, trials):
                 df.to_csv(original_path)
                 break
                 #os.remove(original_path)
-                    
+
+def merge_data3(date, coins):
+    target_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
+    if not os.path.exists(f'{data_path}/ticker/{date}'):
+        os.mkdir(f'{data_path}/ticker/{date}')
+    for coin in coins:
+        print(f'loading {coin}')
+        file_path = f'{data_path}/acc/{date}/{date[0:10]}_{coin}_upbit_volume.csv'
+        if os.path.exists(file_path):
+            df = pd.read_csv(file_path, index_col=0)
+            n = len(df['time'].values)
+            df['coin'] = [coin for _ in range(n)]
+            if coin == coins[0]:
+                df.to_csv(target_path)
+                target_df = pd.read_csv(target_path, index_col=0)
+            else:
+                target_df = pd.concat([target_df, df], ignore_index=True)
+    print('done loading, modifying data.....')
+    target_df.drop_duplicates(inplace=True)
+    target_df.sort_values(by='time', ascending=True, inplace=True)
+    target_df.to_csv(target_path)
+    print(target_df.head(10))
+            
         
 if __name__=='__main__':
     coins = pyupbit.get_tickers(fiat="KRW")
     #coins = ['KRW-BTC', 'KRW-DOGE', 'KRW-NEO', 'KRW-ONG', 'KRW-ONT', 'KRW-SHIB', 'KRW-XRP']
     dates = [
-            '2024-05-10'
+            '2024-05-13'
             ]
     
     trials = list(range(10000))
-    coin = coins[0]
-
+    merge_data3('2024-04-26', coins)
     #merge_dev(coins, dates, trials)
-    merge_data2(dates, trials)
-    date = dates[-1]
-    original_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
-    df = pd.read_csv(original_path, index_col=0)
+    # merge_data2(dates, trials)
+    # date = dates[-1]
+    # original_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
+    # df = pd.read_csv(original_path, index_col=0)
 
-    df = df.rename(
-        columns={'traded_time': 'time',
-                 'traded_price': 'trade_price',
-                 'acc_trade_vol': 'acc_trade_volume'})
-    df.to_csv(original_path)
-    print(len(df['time']))
+    # df = df.rename(
+    #     columns={'traded_time': 'time',
+    #              'traded_price': 'trade_price',
+    #              'acc_trade_vol': 'acc_trade_volume'})
+    # df.to_csv(original_path)
+    # print(len(df['time']))

@@ -23,7 +23,7 @@ class find_best_dev(backtrader):
         #LOG.info(f'current profit: {current_profit}')
         return np.exp(-current_profit)
     
-    def optimize_dev(self, coin, dates:list):
+    def optimize_dev(self, coin, dates:list, dev_cut:dict):
         total_profit = 1.0
         self.coin = coin
         self.dates = dates
@@ -41,9 +41,12 @@ class find_best_dev(backtrader):
             df = pd.read_csv(file_path, index_col=0)
             if input_date>default_date:
                 df = df[df['coin']==coin]
-            init_dev = np.max(df['dev'].values)
+            if coin in set(dev_cut.keys()):
+                init_dev = dev_cut[coin]
+            else:
+                init_dev = np.max(df['dev'].values)
             initial_guess = [init_dev]  # Initial guess for dev_cut and profit_cut
-            bounds = [(1e-12, 1)]  # Bounds for dev_cut and profit_cut
+            bounds = [(1e-13, 2)]  # Bounds for dev_cut and profit_cut
             
             result = minimize(self.objective_function, initial_guess, bounds=bounds, method='Nelder-Mead')
             

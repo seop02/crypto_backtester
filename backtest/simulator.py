@@ -154,7 +154,7 @@ class backtrader():
                     bought_time = times[idx]
                     
                     
-                if status == 'bought' and inst_profit <= 0.99:
+                if status == 'bought' and inst_profit <= 0.98:
                     status = 'selling'
                     selling_price = price[idx]
                     self.transaction_times[f'{status}_times'].append(times[idx])
@@ -220,7 +220,7 @@ class backtrader():
         vis.plot_profits(coin, self.daily_profits)
         
     def update_target_profit(self, time_diff):
-        return 1.001+0.099*np.exp(-time_diff/3000)
+        return 1.001/0.9995+0.099*np.exp(-time_diff/1000)
     
     def simulate_all(self, date:str, dev_cut:dict, profit_cut:dict):
         df = self.import_all(date)
@@ -262,7 +262,7 @@ class backtrader():
                 status = 'buying'
                 buying_price = price[idx]
                 bought_coin = coin
-                LOG.info(f'buying {coin} at price: {buying_price}')
+                #LOG.info(f'buying {coin} at price: {buying_price}')
                 
             if coin in trading_coins and dev>=dev_cut[coin] and status == 'bought':
                 traded_coins.append(coins[idx])
@@ -274,7 +274,7 @@ class backtrader():
                 bought_price = price[idx]
                 traded_coins.append(coins[idx])
                 
-            if status == 'bought' and inst_profit <= -0.05:
+            if status == 'bought' and inst_profit <= 0.97:
                 status = 'selling'
                 selling_price = price[idx]
                 
@@ -286,7 +286,7 @@ class backtrader():
                 status = 'sold'
                 inst_profit = (self.transaction*price[idx]/buying_price)
                 profit *= inst_profit
-                LOG.info(f'selling {coin} at price: {price[idx]} profit: {profit}')
+                #LOG.info(f'selling {coin} at price: {price[idx]} profit: {profit}')
                 max_profit = 0
                 buying_price = 0
                 
@@ -306,7 +306,7 @@ class backtrader():
             inst_profit = (self.transaction*final_price/buying_price)
             profit *= inst_profit
             max_profit = 0
-        LOG.info(f'{date} overall_profit: {profit} traded_coins: {traded_coins}')
+        LOG.info(f'{date} overall_profit: {profit}')
         return profit, traded_coins
         
             
