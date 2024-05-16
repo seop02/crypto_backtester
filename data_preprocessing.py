@@ -35,12 +35,12 @@ def merge_data2(dates, trials):
                 additional_path = f'{data_path}/ticker/{date}/upbit_volume_{int(trial)}.csv'
                 df1 = pd.read_csv(additional_path, index_col=0)
                 df = pd.concat([df, df1], ignore_index=True)
-                #os.remove(additional_path)
+                os.remove(additional_path)
             else:
                 path = f'{data_path}/ticker/{date}/upbit_volume_{int(trial)}.csv'
                 df = pd.read_csv(path, index_col=0)
                 df.to_csv(original_path)
-                #os.remove(path)
+                os.remove(path)
             next_path = path = f'{data_path}/ticker/{date}/upbit_volume_{int(trial)+1}.csv'
             if not os.path.exists(next_path):
                 df.drop_duplicates(inplace=True)
@@ -76,20 +76,20 @@ if __name__=='__main__':
     coins = pyupbit.get_tickers(fiat="KRW")
     #coins = ['KRW-BTC', 'KRW-DOGE', 'KRW-NEO', 'KRW-ONG', 'KRW-ONT', 'KRW-SHIB', 'KRW-XRP']
     dates = [
-            '2024-05-13'
+            '2024-05-15'
             ]
     
     trials = list(range(10000))
-    merge_data3('2024-04-26', coins)
+    #merge_data3('2024-04-26', coins)
     #merge_dev(coins, dates, trials)
-    # merge_data2(dates, trials)
-    # date = dates[-1]
-    # original_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
-    # df = pd.read_csv(original_path, index_col=0)
+    merge_data2(dates, trials)
+    date = dates[-1]
+    original_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
+    df = pd.read_csv(original_path, index_col=0)
 
-    # df = df.rename(
-    #     columns={'traded_time': 'time',
-    #              'traded_price': 'trade_price',
-    #              'acc_trade_vol': 'acc_trade_volume'})
-    # df.to_csv(original_path)
+    df = df.rename(
+        columns={'traded_time': 'time',
+                 'traded_price': 'trade_price',
+                 'acc_trade_vol': 'acc_trade_volume'})
+    df.to_csv(original_path)
     # print(len(df['time']))

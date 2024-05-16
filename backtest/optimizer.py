@@ -19,9 +19,9 @@ class find_best_dev(backtrader):
     def objective_function(self, x):
         dev_cut = x
         df = self.import_individual_data(self.coin, self.date)
-        current_profit = self.simulate(self.dates, dev_cut, self.profit_cut, self.coin)
+        current_sharpe = self.simulate(self.dates, dev_cut, self.profit_cut, self.coin, 'sharpe')
         #LOG.info(f'current profit: {current_profit}')
-        return np.exp(-current_profit)
+        return np.exp(-current_sharpe)
     
     def optimize_dev(self, coin, dates:list, dev_cut:dict):
         total_profit = 1.0
@@ -51,7 +51,8 @@ class find_best_dev(backtrader):
             result = minimize(self.objective_function, initial_guess, bounds=bounds, method='Nelder-Mead')
             
             best_dev_cut = result.x
-            best_profit = -np.log(result.fun)  # Convert back to positive profit
+            best_profit = self.simulate(self.dates, best_dev_cut, self.profit_cut, self.coin, 'profit')
+            
         
             return best_dev_cut, best_profit
         else:

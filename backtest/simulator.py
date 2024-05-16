@@ -28,6 +28,20 @@ class backtrader():
         self.transaction_idx = {
             date : {f'{status}_idx': [] for status in self.statuses} for date in dates
         }
+    
+    def compute_sharpe_ratio(self, profits):
+        # Calculate the mean profit
+        mean_profit = sum(profits) / len(profits)
+
+        # Calculate the standard deviation of profits
+        squared_diffs = [(profit - mean_profit) ** 2 for profit in profits]
+        variance = sum(squared_diffs) / len(profits)
+        std_dev = math.sqrt(variance)
+
+        # Compute the Sharpe ratio
+        sharpe_ratio = mean_profit / std_dev if std_dev != 0 else 0
+
+        return sharpe_ratio
         
         
     def return_step(self, coin, price):
@@ -90,7 +104,7 @@ class backtrader():
         # Check if the slope is negative
         return slope < 0
     
-    def simulate(self, dates, dev_cut, profit_cut, coin, duration=300) -> float: 
+    def simulate(self, dates, dev_cut, profit_cut, coin, output) -> float: 
         profit = 1
         for date in dates:
             #LOG.info(f'{coin} {date}')
@@ -107,6 +121,8 @@ class backtrader():
             
             buying_price = 0
             max_profit = 0
+            
+            profit_list = [1.0]
             
             acc_vol = []
             start_time = times[0]
@@ -172,6 +188,7 @@ class backtrader():
                     self.transaction_idx[date][f'{status}_idx'].append(idx)
                     inst_profit = (self.transaction*price[idx]/buying_price)
                     profit *= inst_profit
+                    profit_list.append(profit)
                     max_profit = 0
                     
                 if status == 'buying':
@@ -189,9 +206,16 @@ class backtrader():
                 self.transaction_idx[date][f'{status}_idx'].append(idx)
                 inst_profit = (self.transaction*price[idx]/buying_price)
                 profit *= inst_profit
+                profit_list.append(profit)
                 max_profit = 0
+                
+        sharpe = self.compute_sharpe_ratio(profit_list)
+        
+        if output == 'sharpe':
+            return sharpe
+        else:
+            return profit
 
-        return profit
             
     def update_profit(self, dev_cut, profit_cut, date, coin, data_type):
         profit = self.simulate(dev_cut, profit_cut, date, data_type, coin)
@@ -220,7 +244,7 @@ class backtrader():
         vis.plot_profits(coin, self.daily_profits)
         
     def update_target_profit(self, time_diff):
-        return 1.001/0.9995+0.099*np.exp(-time_diff/1000)
+        return 1.001/0.9995+0.099*np.exp(-time_diff/100)
     
     def simulate_all(self, date:str, dev_cut:dict, profit_cut:dict):
         df = self.import_all(date)
@@ -253,15 +277,18 @@ class backtrader():
             if idx > 5:
                 mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
                 
-            condition_1 = coin in trading_coins and dev>=dev_cut[coin] and status == 'sold' and idx>5
+            condition_1 = coin in trading_coins and dev>=dev_cut[coin] and idx>5
             # if dev>dev_cut:
             #     print('HIIIII')
             #     print(self.status)
             #     print(idx)
             if condition_1 == True:
-                status = 'buying'
-                buying_price = price[idx]
-                bought_coin = coin
+                if status == 'sold':
+                    status = 'buying'
+                    buying_price = price[idx]
+                    bought_coin = coin
+                else:
+                    bought_time = times[idx]
                 #LOG.info(f'buying {coin} at price: {buying_price}')
                 
             if coin in trading_coins and dev>=dev_cut[coin] and status == 'bought':
@@ -274,7 +301,7 @@ class backtrader():
                 bought_price = price[idx]
                 traded_coins.append(coins[idx])
                 
-            if status == 'bought' and inst_profit <= 0.97:
+            if status == 'bought' and inst_profit <= 0.98:
                 status = 'selling'
                 selling_price = price[idx]
                 
