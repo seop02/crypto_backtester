@@ -46,7 +46,7 @@ class find_best_dev(backtrader):
             else:
                 init_dev = np.max(df['dev'].values)
             initial_guess = [init_dev]  # Initial guess for dev_cut and profit_cut
-            bounds = [(1e-13, 2)]  # Bounds for dev_cut and profit_cut
+            bounds = [(1e-13, 10)]  # Bounds for dev_cut and profit_cut
             
             result = minimize(self.objective_function, initial_guess, bounds=bounds, method='Nelder-Mead')
             

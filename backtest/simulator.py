@@ -10,6 +10,7 @@ from backtest.visualizer import generate_plots
 from scipy.stats import linregress
 import math
 from datetime import datetime
+import pyupbit
 
 logging.basicConfig(level=logging.WARNING)
 logging.getLogger().setLevel(logging.INFO)
@@ -28,6 +29,7 @@ class backtrader():
         self.transaction_idx = {
             date : {f'{status}_idx': [] for status in self.statuses} for date in dates
         }
+        self.step = {coin: 0 for coin in coins}
     
     def compute_sharpe_ratio(self, profits):
         # Calculate the mean profit
@@ -44,28 +46,28 @@ class backtrader():
         return sharpe_ratio
         
         
-    def return_step(self, coin, price):
-        step = {}
+    def return_step(self, price):
+        step = 0
         if price<0.01:
-            step[coin] = 0.000001
+            step = 0.000001
         elif 0.01<=price<0.1:
-            step[coin] = 0.00001
+            step = 0.00001
         elif 1<price<10:
-            step[coin] = 0.001
+            step = 0.001
         elif 10<=price<100:
-            step[coin] = 0.01
+            step = 0.01
         elif 100<=price<1000:
-            step[coin] = 0.1
+            step = 0.1
         elif 1000<=price<10000:
-            step[coin] = 1
+            step = 1
         elif 10000<=price<100000:
-            step[coin] = 10
+            step = 10
         elif 100000<=price<1000000:
-            step[coin] = 50
+            step = 50
         elif 1000000<=price:
-            step[coin] = 1000
+            step = 1000
         #LOG.info(f'updating step of {coin} to {step[coin]}')
-        return step[coin]
+        return step
 
     def round_sigfigs(self, num, sig_figs):
         if num != 0:
@@ -84,6 +86,7 @@ class backtrader():
             path = f'{data_path}/ticker/{date}/upbit_volume.csv'
             raw_data = pd.read_csv(path, index_col=0)
             data = raw_data[raw_data['coin'] == coin]
+            data = data.reset_index(drop=True, level=None)
         return data
     
     def import_all(self, date):
@@ -129,6 +132,8 @@ class backtrader():
             
             for idx, dev in enumerate(devs):
                 time = times[idx]
+                if self.step[coin] == 0:
+                    self.step[coin] = self.return_step(price[idx])
                 # if time-start_time > duration:
                 #     start_time = time
                 #     start_vol = df['acc_trade_volume'].values[idx]
@@ -151,7 +156,8 @@ class backtrader():
                 if idx > 5:
                     mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
                     
-                condition_1 = dev>=dev_cut and status == 'sold' and idx>5
+                condition_1 = (dev>=dev_cut and status == 'sold' 
+                               and idx>5 and price[idx] <= highs[idx]-10*self.step[coin])
                 # if dev>dev_cut:
                 #     print('HIIIII')
                 #     print(self.status)
@@ -161,6 +167,11 @@ class backtrader():
                     buying_price = price[idx]
                     self.transaction_times[f'{status}_times'].append(times[idx])
                     self.transaction_idx[date][f'{status}_idx'].append(idx)
+                
+                # if dev>=dev_cut:
+                #     self.transaction_times['bought_times'].append(times[idx])
+                #     self.transaction_idx[date]['bought_idx'].append(idx)
+                
                     
                 if status == 'buying' and buying_price >= price[idx]:
                     status = 'bought'
@@ -223,15 +234,12 @@ class backtrader():
     
     def individual_simulation(self, coin:str, dev_cut:dict, profit_cut:dict):
         vis = generate_plots()
-        for date in self.dates:
-            if date == '2024-05-03' or date == '2024-04-11' :
-                mode = 'ticker'
-            else:
-                mode = 'acc'
-            df = self.import_individual_data(coin, date, mode)
-            profit = self.simulate(df, dev_cut[coin], profit_cut[coin], date)
+        for idx, date in enumerate(self.dates):
+            df = self.import_individual_data(coin, date)
+            profit = self.simulate([self.dates[idx]], dev_cut[coin], profit_cut, coin, 'profit')
             vis
             self.daily_profits[date] = profit
+            print(self.transaction_idx[date])
             if profit != 1:
                 vis.plot_transactions(df, self.transaction_idx[date], date, coin)
             else:
@@ -244,7 +252,8 @@ class backtrader():
         vis.plot_profits(coin, self.daily_profits)
         
     def update_target_profit(self, time_diff):
-        return 1.001/0.9995+0.099*np.exp(-time_diff/100)
+        #return 1.001/0.9995+0.099*np.exp(-time_diff/300)
+        return (1.001/0.9995+0.01*np.exp(-time_diff/100))
     
     def simulate_all(self, date:str, dev_cut:dict, profit_cut:dict):
         df = self.import_all(date)
@@ -264,6 +273,8 @@ class backtrader():
         
         for idx, dev in enumerate(devs):
             coin = coins[idx]
+            # if self.step[coin] == 0:
+            #     self.step[coin] = self.return_step(price[idx])
             if status != "sold" and buying_price != 0 and coin == bought_coin:
                 inst_profit = (self.transaction*price[idx]/buying_price)
                 max_profit = max(inst_profit, max_profit)
@@ -277,7 +288,8 @@ class backtrader():
             if idx > 5:
                 mean_dev = np.mean(np.square(np.array(devs[idx-5:idx])))
                 
-            condition_1 = coin in trading_coins and dev>=dev_cut[coin] and idx>5
+            condition_1 = (coin in trading_coins and dev>dev_cut[coin]
+                           and idx>5 and price[idx]<=highs[idx]*0.99)
             # if dev>dev_cut:
             #     print('HIIIII')
             #     print(self.status)
@@ -287,8 +299,8 @@ class backtrader():
                     status = 'buying'
                     buying_price = price[idx]
                     bought_coin = coin
-                else:
-                    bought_time = times[idx]
+                # else:
+                #     bought_time = times[idx]
                 #LOG.info(f'buying {coin} at price: {buying_price}')
                 
             if coin in trading_coins and dev>=dev_cut[coin] and status == 'bought':
@@ -335,6 +347,110 @@ class backtrader():
             max_profit = 0
         LOG.info(f'{date} overall_profit: {profit}')
         return profit, traded_coins
+    
+    def simulate_using_avg(self, dates, trading_coins):
+        profits = {}
+        for date in dates:
+            df = self.import_all(date)
+            times = df['time'].values
+            vol = df['acc_trade_volume'].values
+            devs = df['dev'].values
+            price = df['trade_price'].values
+            highs = df['high'].values
+            coins = df['coin'].values
+            status = 'sold'
+            traded_coins = []
+            buying_price = 0
+            max_profit = 0
+            profit = 1
+            bought_coin = 'KRW'
+            upbit_coins = pyupbit.get_tickers("KRW")
+            dev_cash = {coin: [] for coin in upbit_coins}
+            avg_dev = {coin: 0 for coin in upbit_coins}
+            profit_cut = {coin: 1.1 for coin in upbit_coins}
+            
+            for idx, dev in enumerate(devs):
+                coin = coins[idx]
+                if status != "sold" and buying_price != 0 and coin == bought_coin:
+                    inst_profit = (self.transaction*price[idx]/buying_price)
+                    max_profit = max(inst_profit, max_profit)
+                else:
+                    inst_profit = 1
+                    
+                if status == 'bought':
+                    time_diff = times[idx]-bought_time
+                    profit_cut[coin] = self.update_target_profit(time_diff)
+                    
+                dev_cash[coin].append(dev)
+                if len(dev_cash[coin]) >= 1000:
+                    subarray = np.abs(np.array(dev_cash[coin]))
+                    avg_dev[coin] = np.mean(subarray)
+                    #print(f'{coin} {avg_dev[coin]} {dev}')
+                    dev_cash[coin].pop(0)
+                    
+                condition_1 = (coin in trading_coins and avg_dev[coin] != 0 and
+                            dev>2e2*avg_dev[coin])
+                # if dev>dev_cut:
+                #     print('HIIIII')
+                #     print(self.status)
+                #     print(idx)
+                if condition_1 == True:
+                    if status == 'sold':
+                        status = 'buying'
+                        buying_price = price[idx]
+                        bought_coin = coin
+                        #print(status)
+                    # else:
+                    #     bought_time = times[idx]
+                    #LOG.info(f'buying {coin} at price: {buying_price}')
+                    
+                if (coin in trading_coins and avg_dev[coin] != 0 and
+                            dev>2e2*avg_dev[coin] and status == 'bought'):
+                    traded_coins.append(coins[idx])
+                    
+                if status == 'buying' and buying_price >= price[idx]:
+                    status = 'bought'
+                    bought_coin = coin
+                    bought_time = times[idx]
+                    bought_price = price[idx]
+                    traded_coins.append(coins[idx])
+                    
+                if status == 'bought' and inst_profit <= 0.98:
+                    status = 'selling'
+                    selling_price = price[idx]
+                    
+                if status == 'bought' and coin in trading_coins and inst_profit>=profit_cut[coin]:
+                    status = 'selling'
+                    selling_price = price[idx]
+                    
+                if status == 'selling' and selling_price <= price[idx]:
+                    status = 'sold'
+                    inst_profit = (self.transaction*price[idx]/buying_price)
+                    profit *= inst_profit
+                    #LOG.info(f'selling {coin} at price: {price[idx]} profit: {profit}')
+                    max_profit = 0
+                    buying_price = 0
+                    
+                if status == 'buying':
+                    time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
+                    if time_diff > 30:
+                        status = 'sold'
+                
+                if status == 'selling':
+                    time_diff = times[idx]-self.transaction_times[f'{status}_times'][-1]
+                    if time_diff > 30:
+                        status = 'bought'
+            if status == 'bought':
+                status = 'sold'
+                filtered_df = df[df['coin'] == bought_coin]
+                final_price = filtered_df['trade_price'].values[-1]
+                inst_profit = (self.transaction*final_price/buying_price)
+                profit *= inst_profit
+                max_profit = 0
+            LOG.info(f'date: {date} overall_profit: {profit}')
+            profits[date] = profit
+            
+        return profits, traded_coins
         
             
     

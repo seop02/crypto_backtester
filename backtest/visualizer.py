@@ -38,8 +38,8 @@ class generate_plots():
             data[f'ma{ma}'] = data['trade_price'].rolling(ma).mean()
         
         fig, axes = plt.subplots(nrows=2, ncols=1)
-        data[['trade_price', 'ma1000', 'ma2000', 'ma5000']].plot(ax=axes[0])
         
+        axes[0].plot(data['time'], data['trade_price'], color='black')
         axes[0].scatter(bought_time, bought_price, color='blue')
         axes[0].scatter(sold_time, sold_price, color='red')
         axes[1].plot(data['time'], data['dev'], color='black')
@@ -59,7 +59,7 @@ class generate_plots():
         plt.tight_layout()
         plt.show()
         
-    def plot_profits(self, coin, daily_profit:dict):
+    def plot_profits(self, daily_profit:dict):
         dates = list(daily_profit.keys())
         dates = [datetime.datetime.strptime(date, '%Y-%m-%d') for date in dates]
         profits = list(daily_profit.values())
@@ -74,31 +74,36 @@ class generate_plots():
         ax1, ax2 = figure.subplots(2)
         ax1.plot(dates, profits, color='black')
         ax2.plot(dates, cumulative_profit, color='black')
-        ax1.set_title(f'profit for {coin}')
+        ax1.set_title(f'profit')
         plt.show()
         
-    def plot_ticker(self, coins:list, date):
-        file_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
+    def plot_ticker(self, coins:list, date, trial=None):
+        if trial == None:
+            file_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
+        else:
+            file_path = f'{data_path}/ticker/{date}/upbit_volume_{trial}.csv'
         df = pd.read_csv(file_path, index_col=0)
-        num = len(coins)
+        n_rows = len(df)
+        segment_size = n_rows // 3
+        
 
-        figure = plt.figure(figsize=(10,6))
+        fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(10, 6))
         for i, coin in enumerate(coins):
-            filtered_data = df[df['coin'] == coin]
-            plt.subplot(num, 2, i+1)
-            filtered_data['trade_price'].plot()
-            plt.xlabel('time')
-            plt.ylabel('Price')
-            plt.title(f'{coin} price')
+            coin_array = df['coin'].values
+            mask = np.equal(coin_array, 'KRW-BTC')
+            filtered_data = df[mask]
+            ax1.plot(filtered_data['time'].values, filtered_data['trade_price'].values)
+            ax1.set_xlabel('time')
+            ax1.set_ylabel('Price')
+            ax1.set_title(f'{coin} price')
             
-            plt.subplot(num, 2, i+3)
-            filtered_data['dev'].plot()
-            plt.xlabel('time')
-            plt.ylabel('Price')
-            plt.title(f'{coin} dev')
+            ax2.plot(filtered_data['time'].values, filtered_data['dev'].values)
+            ax2.set_xlabel('time')
+            ax2.set_ylabel('dev')
+            ax2.set_title(f'{coin} dev')
             
-        plt.tight_layout()
-        plt.show()
+            plt.tight_layout()
+            plt.show()
         
     def plot_acc_vol(self, coin:str, date:str, mode:str, duration:float, dev_cut:dict):
         if mode == 'acc':
