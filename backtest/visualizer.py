@@ -48,20 +48,20 @@ class generate_plots():
     
     def just_plot(self, data:DataFrame):
         ma_list = [1000, 2000, 5000]
-        for ma in ma_list:
-            name = f'ma{ma}'
-            data[name] = data['trade_price'].rolling(ma).mean()
+        # for ma in ma_list:
+        #     name = f'ma{ma}'
+        #     data[name] = data['trade_price'].rolling(ma).mean()
             
         figure = plt.figure(figsize=(10,6))
         ax1, ax2 = figure.subplots(2)
-        data[['trade_price', 'ma1000', 'ma2000', 'ma5000']].plot(ax=ax1)
+        data[['trade_price']].plot(ax=ax1)
         data['dev'].plot(ax=ax2)
         plt.tight_layout()
         plt.show()
         
     def plot_profits(self, daily_profit:dict):
         dates = list(daily_profit.keys())
-        dates = [datetime.datetime.strptime(date, '%Y-%m-%d') for date in dates]
+        #dates = [datetime.datetime.strptime(date, '%Y-%m-%d') for date in dates]
         profits = list(daily_profit.values())
         
         cumulative_profit = []

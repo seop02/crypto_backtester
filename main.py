@@ -44,10 +44,21 @@ if __name__=='__main__':
     sim = backtrader(coins, dates)
     vis = generate_plots()
     new_dev_cut = {}
-    profits_march, coins = sim.simulate_using_avg(months['mar'], ['KRW-BTC', 'KRW-ETC'])
-    profits_apr, coins = sim.simulate_using_avg(months['apr'], ['KRW-BTC', 'KRW-ETC'])
+    dev_cut = {'KRW-BTC': 1.5253427478518003e-11, 'KRW-ETH': 5.99594445446343e-10, 'KRW-MTL': 1.5602164235006385e-06, 'KRW-XRP': 2.4846242261866788e-06, 'KRW-ETC': 9.704447213659498e-08, 'KRW-WAVES': 3.8565160949355824e-07, 'KRW-QTUM': 1.3759551045938023e-06, 'KRW-LSK': 6.659820487437145e-07, 'KRW-ARK': 2.1133586506300245e-05, 'KRW-STORJ': 2.2302503447668317e-05, 'KRW-ADA': 9.097942400900312e-06, 'KRW-SBD': 3.297317782586103e-06, 'KRW-EOS': 1.4791138914205559e-05, 'KRW-SC': 0.000730037237753145, 'KRW-ZIL': 0.0002219292039994155, 'KRW-BCH': 1.0504099207070016e-08, 'KRW-GAS': 5.203505975740085e-07, 'KRW-UPP': 0.000190274246234205, 'KRW-KNC': 2.6004901651908423e-05, 'KRW-MOC': 0.00012793755267384002, 'KRW-TFUEL': 4.9163835969399936e-05, 'KRW-MANA': 2.0970352423537785e-05, 'KRW-ANKR': 0.00010009731404509614, 'KRW-AERGO': 7.900963202388108e-05, 'KRW-TT': 0.0020304787496475, 'KRW-CRE': 0.0004956343044193, 'KRW-MED': 0.0005684037580099935, 'KRW-MLK': 2.4762546367209604e-05, 'KRW-VET': 0.00015476165194380976, 'KRW-CHZ': 5.467242882849231e-05, 'KRW-HIVE': 2.2757035539631502e-05, 'KRW-KAVA': 6.906092012944841e-06, 'KRW-LINK': 4.52814173899905e-07, 'KRW-BORA': 4.476641034322253e-05, 'KRW-JST': 0.0003200714970655, 'KRW-CRO': 4.0272609009727336e-05, 'KRW-TON': 6.259506938234613e-06, 'KRW-MVL': 0.0002048716771336536, 'KRW-AQT': 9.679695694965135e-06, 'KRW-CBK': 4.062091667150449e-05, 'KRW-SAND': 1.8170194279472966e-05, 'KRW-HPO': 0.00036192856402458, 'KRW-FLOW': 4.887233267083899e-06, 'KRW-STX': 4.0719473166444784e-07, 'KRW-XEC': 0.1928985349435646, 'KRW-SOL': 4.925679377700552e-09, 'KRW-AAVE': 1.8787136765887234e-07, 'KRW-ALGO': 3.6690568346018614e-05, 'KRW-SHIB': 0.02872868517618462, 'KRW-ARB': 2.723703479750534e-06, 'KRW-GRT': 7.161364148590376e-06, 'KRW-BLUR': 7.4646314407531785e-06, 'KRW-IMX': 1.5674062600198376e-06, 'KRW-SEI': 3.4894013077732307e-06, 'KRW-ID': 9.604398896428067e-06}
+               #'KRW-GLM': 5.767264285795995e-05, 'KRW-ETH': 3.2096144610948675e-09, 'KRW-MTL': 9.374124632441e-06}
+    profit_cut = {coin: 1.1 for coin in list(dev_cut.keys())}
+    
+    profits_march, traded_coins = sim.simulate_all(dev_cut, profit_cut, months['mar'])
+    profits_apr, traded_coins = sim.simulate_all(dev_cut, profit_cut, months['apr'])
+    profits_may, traded_coins = sim.simulate_all(dev_cut, profit_cut, months['may'])
+#     profits_march, coins = sim.simulate_using_avg(months['mar'], ['KRW-BTC', 'KRW-ETC'])
+#     profits_apr, coins = sim.simulate_using_avg(months['apr'], ['KRW-BTC', 'KRW-ETC'])
+#     profits_may, coins = sim.simulate_using_avg(months['may'], ['KRW-BTC', 'KRW-ETC'])
+    
     vis.plot_profits(profits_march)
     vis.plot_profits(profits_apr)
+    vis.plot_profits(profits_may)
+
     # for date in dates:
     #     profit, traded_coins = sim.simulate_all(date, dev_cut, profit_cut)
     #     profits[date] = profit
