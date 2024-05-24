@@ -12,14 +12,15 @@ if __name__ == '__main__':
     coin = 'KRW-ETC'
     dates = ['2024-04-11', '2024-04-26']
     trial = 0
-    date = '2024-03'
+    date = '2024-04'
 
     coins = pyupbit.get_tickers('KRW')
-    #df = pd.read_parquet(f'{data_path}/ticker/{date}/upbit_volume.parquet')
+    #
     #df = df[df['coin'] == coin]
-    # df = pd.read_csv(f'{data_path}/ticker/{date}/upbit_volume.csv', index_col=0)
-    # df = df[df['coin'] == 'KRW-GLM']
-    # vis.just_plot(df)
+    #df = pd.read_csv(f'{data_path}/ticker/{date}/upbit_volume.csv', index_col=0)
+    df = pd.read_parquet(f'{data_path}/ticker/{date}/upbit_volume.parquet')
+    df = df[df['coin'] == 'KRW-GLM']
+    vis.just_plot(df)
     # sim = backtrader(coins, dates)
     # dev = finder.abs_dev(df, 0.001)
 

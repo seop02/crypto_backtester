@@ -1,13 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from backtest import data_path
+from backtest import data_path, months
 
 if __name__ == '__main__':
     date = '2024-03'
     coin = 'KRW-GLM'
+    #df = pd.read_parquet(f'{data_path}/ticker/{date}/upbit_volume.parquet')
     df = pd.read_csv(f'{data_path}/ticker/{date}/upbit_volume.csv', index_col=0)
-    df = df[df['coin'] == 'KRW-GLM']
+    df = df[df['coin'] == 'KRW-HIFI']
 
     # Assuming df is your DataFrame
     times = df['time'].values
@@ -22,8 +23,8 @@ if __name__ == '__main__':
     max_length = max(len(devs), len(moving_avg))
     moving_avg = np.pad(moving_avg, (0, max_length - len(moving_avg)), mode='constant', constant_values=0)
 
-    threshold = 0.001  # Set your threshold value here
-    signal = np.abs(devs) > threshold
+    threshold = 1e2  # Set your threshold value here
+    signal = np.abs(devs) > threshold*moving_avg
     indices = np.where(signal)[0]
 
     # Number of points to label
@@ -65,15 +66,16 @@ if __name__ == '__main__':
         ax.clear()  # Clear the previous plot
 
         # Plot the new data
-        time_diff = times[indices[index]:indices[index] + 5000] - times[indices[index]]
+        length = 10000
+        time_diff = times[indices[index]:indices[index] + length] - times[indices[index]]
         bought_price = prices[indices[index]]
-        decaying_price = (1.001 / 0.9995 + 0.1 * np.exp(-time_diff / 1000)) * bought_price
+        decaying_price = (1.001 / 0.9995 + 0.1 * np.exp(-time_diff / 3000)) * bought_price
 
-        ax.plot(times[max(0, indices[index] - 5000):indices[index] + 5000],
-                prices[max(0, indices[index] - 5000):indices[index] + 5000], color='black')
-        ax.plot(times[max(0, indices[index] - 5000):indices[index] + 5000],
-                ma[max(0, indices[index] - 5000):indices[index] + 5000], color='orange')
-        ax.plot(times[indices[index]:indices[index] + 5000],
+        ax.plot(times[max(0, indices[index] - 5000):indices[index] + length],
+                prices[max(0, indices[index] - 5000):indices[index] + length], color='black')
+        ax.plot(times[max(0, indices[index] - 5000):indices[index] + length],
+                ma[max(0, indices[index] - 5000):indices[index] + length], color='orange')
+        ax.plot(times[indices[index]:indices[index] + length],
                 decaying_price, color='red', linestyle='dashed')
         ax.scatter(times[indices[index]], prices[indices[index]], color='blue', s=40)
         ax.set_ylabel('Price')

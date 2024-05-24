@@ -82,7 +82,7 @@ def merge_data3(date, coins):
     print(target_df.head(10))
     
 def combine_dates(dates, label):
-    final_path = f'{data_path}/ticker/{dates[0][0:7]}/upbit_volume.parquet'
+    final_path = f'{data_path}/ticker/{dates[0][0:7]}/upbit_volume.csv'
     if not os.path.exists(f'{data_path}/ticker/{dates[0][0:7]}'):
         os.mkdir(f'{data_path}/ticker/{dates[0][0:7]}')
     for date in dates:
@@ -92,12 +92,14 @@ def combine_dates(dates, label):
         print(df.shape[1])
         if date == dates[0]:
             target_df = df
-            target_df.to_parquet(final_path, engine='pyarrow')
+            #target_df.to_parquet(final_path, engine='pyarrow')
+            target_df.to_csv(final_path)
         else:
             target_df = pd.concat([target_df, df], ignore_index=True)
     print(target_df.head(10))
     df['time'] = df['time'].astype(str)
-    target_df.to_parquet(final_path, engine='pyarrow')
+    #target_df.to_parquet(final_path, engine='pyarrow')
+    target_df.to_csv(final_path)
     
     
             
@@ -116,7 +118,7 @@ if __name__=='__main__':
     }
 
 
-    combine_dates(months["may"], 0)
+    combine_dates(months["apr"], 0)
     #dates = ['2024-0']
     #coins = ['KRW-BTC', 'KRW-DOGE', 'KRW-NEO', 'KRW-ONG', 'KRW-ONT', 'KRW-SHIB', 'KRW-XRP']
     # trials = list(range(272,10000))
