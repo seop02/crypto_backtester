@@ -18,42 +18,38 @@ class find_best_dev(backtrader):
     profit_cut = {}
     def objective_function(self, x):
         dev_cut = x
-        df = self.import_individual_data(self.coin, self.date)
-        current_sharpe = self.simulate(self.dates, dev_cut, self.profit_cut, self.coin, 'sharpe')
+        df = self.import_all(self.date)
+        df = df[df['coin']==self.coin]
+        current_sharpe = self.simulate(df, dev_cut, self.date)
         #LOG.info(f'current profit: {current_profit}')
         return np.exp(-current_sharpe)
     
-    def optimize_dev(self, coin, dates:list, dev_cut:dict):
+    def optimize_dev(self, coin, date:str, dev_cut:dict):
         total_profit = 1.0
         self.coin = coin
-        self.dates = dates
-        date = dates[0]
         self.profit_cut[coin] = 1.2
+        self.date = date
         
-        default_date = datetime.strptime('2024-04-28', '%Y-%m-%d')
-        input_date = datetime.strptime(date, '%Y-%m-%d')
+        file_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
         
-        if input_date>default_date:
-            file_path = f'{data_path}/ticker/{date}/upbit_volume.csv'
-        else:
-            file_path = f'{data_path}/acc/{date}/{date[:10]}_{coin}_upbit_volume.csv'
         if os.path.exists(file_path):
             df = pd.read_csv(file_path, index_col=0)
-            if input_date>default_date:
-                df = df[df['coin']==coin]
-            if coin in set(dev_cut.keys()):
-                init_dev = dev_cut[coin]
-            else:
-                init_dev = np.max(df['dev'].values)
-            initial_guess = [init_dev]  # Initial guess for dev_cut and profit_cut
-            bounds = [(1e-13, 10)]  # Bounds for dev_cut and profit_cut
+            df = df[df['coin']==coin]
+            best_dev_cut, best_profit = 0, 0
+            if len(df['coin'].values) != 0:
+                if coin in set(dev_cut.keys()):
+                    init_dev = dev_cut[coin]
+                else:
+                    init_dev = np.max(df['dev'].values)
+                initial_guess = [init_dev]  # Initial guess for dev_cut and profit_cut
+                bounds = [(1e-13, 10)]  # Bounds for dev_cut and profit_cut
+                
+                result = minimize(self.objective_function, initial_guess, bounds=bounds, method='Nelder-Mead')
+                
+                best_dev_cut = result.x
+                best_profit = self.simulate(df, best_dev_cut, self.date, 'profit')
+                
             
-            result = minimize(self.objective_function, initial_guess, bounds=bounds, method='Nelder-Mead')
-            
-            best_dev_cut = result.x
-            best_profit = self.simulate(self.dates, best_dev_cut, self.profit_cut, self.coin, 'profit')
-            
-        
             return best_dev_cut, best_profit
         else:
             return 1, 1

@@ -1,10 +1,16 @@
 import pandas as pd
 import numpy as np
+import pyupbit
 from backtest import data_path, months
 from backtest.generate_training import label_data
 
 if __name__=='__main__':
-    coins = ['KRW-BTC', 'KRW-ETC', 'KRW-ETH', 'KRW-GLM', 'KRW-STX', 'KRW-HIVE', 'KRW-XRP']
+    coins = [
+        'KRW-BTC', 'KRW-ETC', 'KRW-ETH', 
+        'KRW-GLM', 'KRW-STX', 'KRW-HIVE', 
+        'KRW-XRP', 'KRW-MVL', 'KRW-NEAR',
+        'KRW-LINK', 'KRW-CTC']
+    coins = pyupbit.get_tickers('KRW')
     dates = ['2024-03', '2024-04']
     X_tot = []
     y_tot = []
@@ -18,5 +24,7 @@ if __name__=='__main__':
     print(X_tot[0:2])
     print(len(y_tot))
     print(y_tot)
-    np.save(f'{data_path}/binary/x_more.npy', X_tot)
-    np.save(f'{data_path}/binary/y_more.npy', y_tot)
+    np.save(f'{data_path}/binary/x_tot.npy', X_tot)
+    np.save(f'{data_path}/binary/y_tot.npy', y_tot)
+    
+    
